@@ -49,7 +49,7 @@ def GetVolume(Bin):
 	return sum(Bin)
 
 def IsTerminal(State):
-	if(sum(State.items) == 0.0):
+	if sum(State.items) == 0.0:
 		return True
 	else:
 		return False
