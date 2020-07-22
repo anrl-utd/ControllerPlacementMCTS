@@ -38,6 +38,8 @@ def ApplyAction(CurrentState, Action):
 
 	return State2
 
+
+#returns random next state
 def GetNextState(CurrentState):
 	Actions = GetActions(CurrentState)
 	i = np.random.randint(0, len(Actions))
@@ -48,6 +50,7 @@ def GetNextState(CurrentState):
 def GetVolume(Bin):
 	return sum(Bin)
 
+# Checks if State is an end state
 def IsTerminal(State):
 	if sum(State.items) == 0.0:
 		return True

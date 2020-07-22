@@ -20,3 +20,5 @@ class Node:
             return True
         else:
             return False
+
+        #add comparison for stats.current_controllers
