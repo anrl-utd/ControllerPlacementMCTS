@@ -23,6 +23,8 @@ class State:
         self.numberClusters = len(clusters)
         self.current_controllers = np.zeros((self.numberClusters,),
                                             dtype=int)  # Stores controllers placed in last action (used for rendering)
+        for i in range(len(self.current_controllers)):
+            self.current_controllers[i]=-1
         print("Initialized environment!")
 
     def _graph_degree(self):
@@ -41,7 +43,7 @@ def GetActions(CurrentState):
     possibleActions = []
     i = 0
     for controller in np.nditer(CurrentState.current_controllers):
-        if controller == 0:
+        if controller == -1:
             cluster = CurrentState.clusters[i]
             for node in cluster:
                 possibleActions.append(node)
@@ -62,8 +64,21 @@ def GetActions(CurrentState):
 
 def ApplyAction(CurrentState, Action):
     state2 = copy.deepcopy(CurrentState)  # made need to make a copy function for state.
-    clusters = CurrentState.clusters.copy()  # made need to do something like np.array(list(CurrentState.clusters),dtype=np.int32)
-    clusterIndex, nodeIndex = np.where(clusters == Action)
+    clustersCopy = CurrentState.clusters.copy()  # made need to do something like np.array(list(CurrentState.clusters),dtype=np.int32)
+    cluster = []
+    for set in clustersCopy:
+        cluster.append(list(set))
+    clusterIndex = -1
+    nodeIndex = -1
+
+    for x_index, x in enumerate(cluster):
+        for y_index, y in enumerate(x):
+            if y == Action:
+                nodeIndex = y_index
+                clusterIndex = x_index
+
+
+
     controller_graph = None  # Stores controller metagraph
     state2.selectedControllers += 1
     state2.current_controllers[clusterIndex] = Action
@@ -157,15 +172,10 @@ def set_controllers(CurrentState):
 def GetResult(CurrentState):
     controller_graph = set_controllers(CurrentState)
     # Return output reward
-    if CurrentState.current_controllers[1]==0 or CurrentState.current_controllers[2]==0:
-        return -10
-    return 100000/controller_graph.size(weight='weight')
 
-    """ CalculateOptimal and step are used to calculate the best solution 
+    return controller_graph.size(weight='weight')*-1
 
 
-
-    """
 
 
 def step(self, action: list) -> int:

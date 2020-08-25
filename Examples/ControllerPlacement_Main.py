@@ -3,7 +3,7 @@ import pickle
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
-from Examples import env1 as game
+from Examples import ControllerPlacement_env as game
 import Node as nd
 import numpy as np
 import MCTS
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     else:
         print("Generating graph")
 
-        graph, clusters, pos = generateGraph(3, 33, draw=True)
+        graph, clusters, pos = generateGraph(5, 80, draw=True)
 
         nx.write_gpickle(graph, 'graph.gpickle')
         pickle.dump(clusters, open('clusters.pickle', 'wb'))

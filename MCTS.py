@@ -17,7 +17,7 @@ import numpy as np
 import os
 import copy
 # Import your game implementation here.
-from Examples import env1 as game
+from Examples import ControllerPlacement_env as game
 
 
 # ------------------------------------------------------------------------#
@@ -77,7 +77,7 @@ class MCTS:
                     print("Considered child", game.GetStateRepresentation(Child.state), "UTC: inf", )
                 return Child
 
-        MaxWeight = 0.0
+        MaxWeight = -100000
         for Child in Node.children:
             # Weight = self.EvalUTC(Child)
             Weight = Child.sputc
@@ -96,11 +96,11 @@ class MCTS:
         if self.IsTerminal(Leaf):
             #print("Is Terminal.")
             return False
-        elif Leaf.visits == 0:
+        elif Leaf.visits == 0:  #has never been visited
             return Leaf
         else:
             # Expand.
-            if len(Leaf.children) == 0:
+            if len(Leaf.children) == 0:                                 #adds children to node
                 Children = self.EvalChildren(copy.deepcopy(Leaf))
                 for NewChild in Children:
                     if np.all(NewChild.state == Leaf.state):            # comparator for state
@@ -307,8 +307,8 @@ class MCTS:
     #	Runs the SP-MCTS.
     # MaxIter	- Maximum iterations to run the search algorithm.
     # -----------------------------------------------------------------------#
-    def Run(self, MaxIter=400):
-        minmax = 0
+    def Run(self, MaxIter=10000):
+        minmax = -100000
         self.verbose = False
         for i in range(MaxIter):
             print(str(i)+": ")
@@ -323,13 +323,15 @@ class MCTS:
                 self.Backpropagation(Y, Result)
             else:
                 Result = game.GetResult(X.state)
+                print(X.state.current_controllers)
+                print(Result)
                 if self.verbose:
                     print("Result: ", Result)
                 self.Backpropagation(X, Result)
             self.PrintResult(Result)
             if Result > minmax:
                 minmax = Result
-        print(minmax)
+        print("score:"+str(minmax))
 
 
 
