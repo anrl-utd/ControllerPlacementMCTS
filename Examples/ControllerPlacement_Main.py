@@ -7,6 +7,7 @@ from Examples import ControllerPlacement_env as game
 import Node as nd
 import numpy as np
 import MCTS
+import random
 
 def generateGraph(num_clusters: int, num_nodes: int, prob_cluster: float = 0.5, prob: float = 0.2, weight_low: int = 0,
                   weight_high: int = 100, draw=True) -> (nx.Graph, list, dict):
@@ -82,6 +83,69 @@ def generateGraph(num_clusters: int, num_nodes: int, prob_cluster: float = 0.5, 
         plt.show()
     return G, clusters, pos
 
+
+def generateClusters(graph: nx.Graph, edge_label: str=None) -> (nx.Graph, list, dict):
+    """
+    Converts a normal NetworkX graph into a controller-placement graph by adding cluster attributes
+    Args:
+        graph (nx.Graph): NetworkX graph to convert to controller-placement graph with clusters
+        edge_label (str): Optional edge attribute label of original graph to use as edge weights instead of random
+    Returns:
+        NetworkX graph with 'cluster' node attribute
+        List of lists of nodes in clusters
+        Graph display rendering position
+    """
+    # Uses Clauset-Newman-Moore greedy modularity maximization algorithm to partition nodes into communities
+    # it does not consider edge weights, sadly
+    new_graph = nx.relabel.convert_node_labels_to_integers(graph)  # Converts node IDs to ints in case they weren't before
+    clusters = list(nx.algorithms.community.greedy_modularity_communities(new_graph))
+    # Add cluster attribute
+    node_attrs = {}
+    for i in range(len(clusters)):
+        node_list = clusters[i]
+        for node in node_list:
+            node_attrs[node] = {'cluster' : i }
+    nx.set_node_attributes(new_graph, node_attrs)
+
+    # Set random edge weights if no edge label is set
+    if edge_label is None:
+        for (u, v) in new_graph.edges():
+            new_graph.edges[u,v]['weight'] = random.randint(0,10)
+    else:
+        # Use LinkSpeed (unit GB/s) edge attribute as weight
+        edge_dict = nx.get_edge_attributes(new_graph, edge_label)
+        new_edges = { key: float(value) for key, value in edge_dict.items() }
+        nx.set_edge_attributes(new_graph, new_edges, 'weight')
+
+    return new_graph, clusters, nx.kamada_kawai_layout(new_graph)
+
+def generateGraphAlt(num_nodes, num_clusters):
+    print("Generating graph")
+    # graph, clusters, pos = generateGraph(6, 90, draw=False, weight_low=1, weight_high=10)
+    clusters = []
+    graph = None
+    pos = None
+    while len(clusters) < num_clusters:
+        k_graph = nx.fast_gnp_random_graph(num_nodes, 0.05)
+        while (not nx.is_connected(k_graph)):
+            k_graph = nx.fast_gnp_random_graph(num_nodes, 0.05)
+        graph, clusters, pos = generateClusters(k_graph)
+    nx.write_gpickle(graph, 'graph.gpickle')
+    pickle.dump(clusters, open('clusters.pickle', 'wb'))
+    pickle.dump(pos, open('position.pickle', 'wb'))
+
+
+    node_colors = np.arange(0, num_nodes, 1, np.uint8)  # Stores color of nodes
+    if True:
+        nx.draw_networkx_nodes(graph, pos, node_color=node_colors)
+        nx.draw_networkx_labels(graph, pos)
+        nx.draw_networkx_edges(graph, pos, graph.edges())
+        plt.draw()
+        plt.show()
+    return graph, clusters, pos
+
+
+
 if __name__ == "__main__":
     graph = None
     clusters = None
@@ -95,7 +159,7 @@ if __name__ == "__main__":
     else:
         print("Generating graph")
 
-        graph, clusters, pos = generateGraph(5, 80, draw=True)
+        graph, clusters, pos = generateGraphAlt(100,8)
 
         nx.write_gpickle(graph, 'graph.gpickle')
         pickle.dump(clusters, open('clusters.pickle', 'wb'))

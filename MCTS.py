@@ -13,9 +13,12 @@
 # ------------------------------------------------------------------------#
 import copy
 import Node as nd
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 import copy
+import itertools
+
 # Import your game implementation here.
 from Examples import ControllerPlacement_env as game
 
@@ -94,14 +97,15 @@ class MCTS:
     # -----------------------------------------------------------------------#
     def Expansion(self, Leaf):
         if self.IsTerminal(Leaf):
-            #print("Is Terminal.")
+            print("Is Terminal.")
             return False
         elif Leaf.visits == 0:  #has never been visited
             return Leaf
         else:
             # Expand.
             if len(Leaf.children) == 0:                                 #adds children to node
-                Children = self.EvalChildren(copy.deepcopy(Leaf))
+                Children = self.EvalChildren(Leaf)
+
                 for NewChild in Children:
                     if np.all(NewChild.state == Leaf.state):            # comparator for state
                         continue
@@ -159,7 +163,9 @@ class MCTS:
     # Node	- Node from which to perform simulation.
     # -----------------------------------------------------------------------#
     def Simulation(self, Node):
-        CurrentState = copy.deepcopy(Node.state)
+        CurrentState = game.State(Node.state.graph,Node.state.clusters, Node.state.pos)
+        CurrentState.current_controllers = Node.state.current_controllers.copy()
+        CurrentState.selectedControllers = Node.state.selectedControllers
         # if(any(CurrentState) == False):
         #	return None
         if self.verbose:
@@ -302,12 +308,42 @@ class MCTS:
         f.write(str(Result) + '\n')
         f.close()
 
+    def calculateOptimal(self) -> (list, int):
+        """
+        Goes through all possible combinations of valid controllers and find best one.
+        Returns:
+            (List of best nodes, Best distance possible)
+        """
+
+        clustersCopy = self.root.state.clusters.copy()  # made need to do something like np.array(list(CurrentState.clusters),dtype=np.int32)
+        clusters = []
+        for set in clustersCopy:
+            clusters.append(list(set))
+
+        combinations = list(itertools.product(*clusters))
+        max_dist = -1000000
+        min_combination = None
+        for combination in combinations:
+            newState = game.State(self.root.state.graph, self.root.state.clusters, self.root.state.pos)
+            newState.current_controllers = combination
+
+            dist = game.GetResult(newState)
+            if (dist > max_dist):
+                max_dist = dist
+                min_combination = combination
+        return (min_combination, max_dist)
+
     # -----------------------------------------------------------------------#
     # Description:
     #	Runs the SP-MCTS.
     # MaxIter	- Maximum iterations to run the search algorithm.
     # -----------------------------------------------------------------------#
-    def Run(self, MaxIter=10000):
+    def Run(self, MaxIter=1000):
+
+        #print(self.calculateOptimal())
+
+        y_list = []
+
         minmax = -100000
         self.verbose = False
         for i in range(MaxIter):
@@ -321,8 +357,10 @@ class MCTS:
                 if self.verbose:
                     print("Result: ", Result)
                 self.Backpropagation(Y, Result)
+                y_list.append(Result)
             else:
                 Result = game.GetResult(X.state)
+                y_list.append(Result)
                 print(X.state.current_controllers)
                 print(Result)
                 if self.verbose:
@@ -337,3 +375,9 @@ class MCTS:
 
         print("Search complete.")
         print("Iterations:", i)
+
+        plt.plot( [i for i in range(MaxIter)],y_list)
+        plt.title('Max Score Vs Iteration Step')
+        plt.xlabel('Iteration Step')
+        plt.ylabel('Max Scor')
+        plt.show()

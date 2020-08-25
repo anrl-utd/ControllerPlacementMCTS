@@ -2,6 +2,7 @@ import numpy as np
 import itertools
 import copy
 import networkx as nx
+from Examples import ControllerPlacement_env as game
 
 # States are given as:
 # bins = np.array([v1, v2,..., vn])
@@ -12,8 +13,7 @@ MAX_VOLUME = 10.0
 class State:
     def __init__(self, graph: nx.Graph, clusters: list, pos: dict = None):
         self.selectedControllers = 0
-        self.original_graph = graph.copy()  # Keep original graph in case of needing it for reset
-        # Generate graph display positions if needed
+
         if (pos is None):
             self.pos = nx.kamada_kawai_layout(graph)  # get the positions of the nodes of the graph
         else:
@@ -25,11 +25,9 @@ class State:
                                             dtype=int)  # Stores controllers placed in last action (used for rendering)
         for i in range(len(self.current_controllers)):
             self.current_controllers[i]=-1
-        print("Initialized environment!")
+        #print("Initialized environment!")
 
-    def _graph_degree(self):
-        """Returns the highest degree of a node in the graph"""
-        return max([degree for node, degree in self.graph.degree()])
+
 
 
 
@@ -63,7 +61,10 @@ def GetActions(CurrentState):
     # -----------------------------------------------------------------------#
 
 def ApplyAction(CurrentState, Action):
-    state2 = copy.deepcopy(CurrentState)  # made need to make a copy function for state.
+    state2 = game.State(CurrentState.graph, CurrentState.clusters, CurrentState.pos)
+    state2.current_controllers = CurrentState.current_controllers.copy()
+    state2.selectedControllers = CurrentState.selectedControllers
+
     clustersCopy = CurrentState.clusters.copy()  # made need to do something like np.array(list(CurrentState.clusters),dtype=np.int32)
     cluster = []
     for set in clustersCopy:
@@ -76,6 +77,9 @@ def ApplyAction(CurrentState, Action):
             if y == Action:
                 nodeIndex = y_index
                 clusterIndex = x_index
+                break
+        if nodeIndex != -1:
+            break
 
 
 
@@ -122,9 +126,9 @@ def EvalNextStates(CurrentState):
         NextState = ApplyAction(CurrentState, Action)
         NextStates.append(NextState)
 
-    if (A == []):
-        NextState = ApplyAction(CurrentState, A)
-        NextStates.append(NextState)
+    # if (A == []):
+    #     NextState = ApplyAction(CurrentState, A)
+    #     NextStates.append(NextState)
 
     return NextStates
 
