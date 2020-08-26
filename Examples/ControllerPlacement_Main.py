@@ -8,6 +8,7 @@ import Node as nd
 import numpy as np
 import MCTS
 import random
+import time
 
 def generateGraph(num_clusters: int, num_nodes: int, prob_cluster: float = 0.5, prob: float = 0.2, weight_low: int = 0,
                   weight_high: int = 100, draw=True) -> (nx.Graph, list, dict):
@@ -130,13 +131,13 @@ def generateGraphAlt(num_nodes, num_clusters):
         while (not nx.is_connected(k_graph)):
             k_graph = nx.fast_gnp_random_graph(num_nodes, 0.05)
         graph, clusters, pos = generateClusters(k_graph)
-    nx.write_gpickle(graph, 'graph.gpickle')
-    pickle.dump(clusters, open('clusters.pickle', 'wb'))
-    pickle.dump(pos, open('position.pickle', 'wb'))
+    nx.write_gpickle(graph, '1000 Nodes/graph.gpickle')
+    pickle.dump(clusters, open('1000 Nodes/clusters.pickle', 'wb'))
+    pickle.dump(pos, open('1000 Nodes/position.pickle', 'wb'))
 
 
     node_colors = np.arange(0, num_nodes, 1, np.uint8)  # Stores color of nodes
-    if True:
+    if False:
         nx.draw_networkx_nodes(graph, pos, node_color=node_colors)
         nx.draw_networkx_labels(graph, pos)
         nx.draw_networkx_edges(graph, pos, graph.edges())
@@ -151,28 +152,31 @@ if __name__ == "__main__":
     clusters = None
     pos = None
     # This might be lazy code, but I think it is not worth importing more modules just to check if file exists before trying to open it
-    if os.path.isfile('clusters.pickle') and os.path.isfile('graph.gpickle') and os.path.isfile('position.pickle'):
+    if os.path.isfile('1000 Nodes/clusters.pickle') and os.path.isfile('1000 Nodes/graph.gpickle') and os.path.isfile(
+            '1000 Nodes/position.pickle'):
         print("Found graph from file, using saved graph")
-        clusters = pickle.load(open('clusters.pickle', 'rb'))
-        pos = pickle.load(open('position.pickle', 'rb'))
-        graph = nx.read_gpickle('graph.gpickle')
+        clusters = pickle.load(open('1000 Nodes/clusters.pickle', 'rb'))
+        pos = pickle.load(open('1000 Nodes/position.pickle', 'rb'))
+        graph = nx.read_gpickle('1000 Nodes/graph.gpickle')
 
-        node_colors = np.arange(0, 100, 1, np.uint8)  # Stores color of nodes
-        nx.draw_networkx_nodes(graph, pos, node_color=node_colors)
-        nx.draw_networkx_labels(graph, pos)
-        nx.draw_networkx_edges(graph, pos, graph.edges())
-        plt.draw()
-        plt.show()
+        # node_colors = np.arange(0, 100, 1, np.uint8)  # Stores color of nodes
+        # nx.draw_networkx_nodes(graph, pos, node_color=node_colors)
+        # nx.draw_networkx_labels(graph, pos)
+        # nx.draw_networkx_edges(graph, pos, graph.edges())
+        # plt.draw()
+        # plt.show()
     else:
+
+        start_time = time.time()
+
+
+        graph, clusters, pos = generateGraphAlt(50,6)
+
+        nx.write_gpickle(graph, '1000 Nodes/graph.gpickle')
+        pickle.dump(clusters, open('1000 Nodes/clusters.pickle', 'wb'))
+        pickle.dump(pos, open('1000 Nodes/position.pickle', 'wb'))
         print("Generating graph")
-
-        graph, clusters, pos = generateGraphAlt(100,8)
-
-        nx.write_gpickle(graph, 'graph.gpickle')
-        pickle.dump(clusters, open('clusters.pickle', 'wb'))
-        pickle.dump(pos, open('position.pickle', 'wb'))
-
-
+        print("--- %s seconds ---" % (time.time() - start_time))
 
     # try:
         # I store the results in a SQLite database so that it can resume from checkpoints.

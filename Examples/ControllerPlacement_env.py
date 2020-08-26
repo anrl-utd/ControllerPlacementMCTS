@@ -3,6 +3,7 @@ import itertools
 import copy
 import networkx as nx
 from Examples import ControllerPlacement_env as game
+import time
 
 # States are given as:
 # bins = np.array([v1, v2,..., vn])
@@ -157,8 +158,8 @@ def set_controllers(CurrentState, graph: nx.graph):
     # Add edges between controllers in metagraph
     for pair in itertools.combinations(new_contr_indices, 2):
         controller_graph.add_edge(pair[0][0], pair[1][0],
-                                  weight=nx.dijkstra_path_length(graph, source=pair[0][1],
-                                                                 target=pair[1][1]))
+                                  weight=nx.dijkstra_path_length(graph, source=pair[0][1],target=pair[1][1]))
+        r = nx.dijkstra_path_length(graph, source=pair[0][1],target=pair[1][1])
     return controller_graph
 
 

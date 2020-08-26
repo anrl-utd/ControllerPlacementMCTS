@@ -19,6 +19,7 @@ import os
 import copy
 import networkx as nx
 import itertools
+import time
 
 # Import your game implementation here.
 from Examples import ControllerPlacement_env as game
@@ -99,7 +100,7 @@ class MCTS:
     # -----------------------------------------------------------------------#
     def Expansion(self, Leaf):
         if self.IsTerminal(Leaf):
-            print("Is Terminal.")
+            # print("Is Terminal.")
             return False
         elif Leaf.visits == 0:  #has never been visited
             return Leaf
@@ -183,6 +184,7 @@ class MCTS:
                 # game.PrintTablesScores(CurrentState)
 
         Result = game.GetResult(CurrentState,self.graph)
+        #PRINTING RESULTS
         print(CurrentState.current_controllers)
         print(Result)
         return Result
@@ -344,7 +346,9 @@ class MCTS:
     #	Runs the SP-MCTS.
     # MaxIter	- Maximum iterations to run the search algorithm.
     # -----------------------------------------------------------------------#
-    def Run(self, MaxIter=20000):
+    def Run(self, MaxIter=10000):
+        start_time = time.time()
+
 
         # print(self.calculateOptimal())
 
@@ -354,7 +358,7 @@ class MCTS:
         minmax = -100000
         self.verbose = False
         for i in range(MaxIter):
-            print(str(i)+": ")
+            # print(str(i)+": ")
             if self.verbose:
                 print("\n===== Begin iteration:", i, "=====")
             X = self.Selection()
@@ -368,12 +372,12 @@ class MCTS:
             else:
                 Result = game.GetResult(X.state,self.graph)
                 y_list.append(Result)
-                print(X.state.current_controllers)
-                print(Result)
+                # print(X.state.current_controllers)
+                # print(Result)
                 if self.verbose:
                     print("Result: ", Result)
                 self.Backpropagation(X, Result)
-            self.PrintResult(Result)
+            # self.PrintResult(Result)
             if Result > minmax:
                 minmax = Result
         print("score:"+str(minmax))
@@ -382,6 +386,7 @@ class MCTS:
 
         print("Search complete.")
         print("Iterations:", i)
+        print("--- %s seconds ---" % (time.time() - start_time))
 
         plt.plot( [i for i in range(MaxIter)],y_list)
         plt.title('Max Score Vs Iteration Step')
