@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import copy
+import networkx as nx
 import itertools
 
 # Import your game implementation here.
@@ -34,9 +35,10 @@ class MCTS:
     # Verbose - True: Print details of search during execution.
     # 			False: Otherwise
     # -----------------------------------------------------------------------#
-    def __init__(self, Node, Verbose=False):
+    def __init__(self, Node, graph: nx.Graph, Verbose=False):
         self.root = Node
         self.verbose = Verbose
+        self.graph = graph.copy()
 
     # -----------------------------------------------------------------------#
     # Description: Performs selection phase of the MCTS.
@@ -163,7 +165,7 @@ class MCTS:
     # Node	- Node from which to perform simulation.
     # -----------------------------------------------------------------------#
     def Simulation(self, Node):
-        CurrentState = game.State(Node.state.graph,Node.state.clusters, Node.state.pos)
+        CurrentState = game.State(Node.state.clusters)
         CurrentState.current_controllers = Node.state.current_controllers.copy()
         CurrentState.selectedControllers = Node.state.selectedControllers
         # if(any(CurrentState) == False):
@@ -180,7 +182,7 @@ class MCTS:
                 print("CurrentState:", game.GetStateRepresentation(CurrentState))
                 # game.PrintTablesScores(CurrentState)
 
-        Result = game.GetResult(CurrentState)
+        Result = game.GetResult(CurrentState,self.graph)
         print(CurrentState.current_controllers)
         print(Result)
         return Result
@@ -308,6 +310,9 @@ class MCTS:
         f.write(str(Result) + '\n')
         f.close()
 
+
+
+
     def calculateOptimal(self) -> (list, int):
         """
         Goes through all possible combinations of valid controllers and find best one.
@@ -323,11 +328,12 @@ class MCTS:
         combinations = list(itertools.product(*clusters))
         max_dist = -1000000
         min_combination = None
-        for combination in combinations:
-            newState = game.State(self.root.state.graph, self.root.state.clusters, self.root.state.pos)
+        for i,combination in enumerate(combinations):
+            print(i,"  ",max_dist)
+            newState = game.State(self.root.state.clusters)
             newState.current_controllers = combination
 
-            dist = game.GetResult(newState)
+            dist = game.GetResult(newState,self.graph)
             if (dist > max_dist):
                 max_dist = dist
                 min_combination = combination
@@ -338,9 +344,10 @@ class MCTS:
     #	Runs the SP-MCTS.
     # MaxIter	- Maximum iterations to run the search algorithm.
     # -----------------------------------------------------------------------#
-    def Run(self, MaxIter=1000):
+    def Run(self, MaxIter=20000):
 
-        #print(self.calculateOptimal())
+        # print(self.calculateOptimal())
+
 
         y_list = []
 
@@ -359,7 +366,7 @@ class MCTS:
                 self.Backpropagation(Y, Result)
                 y_list.append(Result)
             else:
-                Result = game.GetResult(X.state)
+                Result = game.GetResult(X.state,self.graph)
                 y_list.append(Result)
                 print(X.state.current_controllers)
                 print(Result)

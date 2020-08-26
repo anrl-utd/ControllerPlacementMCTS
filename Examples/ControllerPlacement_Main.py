@@ -156,6 +156,13 @@ if __name__ == "__main__":
         clusters = pickle.load(open('clusters.pickle', 'rb'))
         pos = pickle.load(open('position.pickle', 'rb'))
         graph = nx.read_gpickle('graph.gpickle')
+
+        node_colors = np.arange(0, 100, 1, np.uint8)  # Stores color of nodes
+        nx.draw_networkx_nodes(graph, pos, node_color=node_colors)
+        nx.draw_networkx_labels(graph, pos)
+        nx.draw_networkx_edges(graph, pos, graph.edges())
+        plt.draw()
+        plt.show()
     else:
         print("Generating graph")
 
@@ -165,6 +172,8 @@ if __name__ == "__main__":
         pickle.dump(clusters, open('clusters.pickle', 'wb'))
         pickle.dump(pos, open('position.pickle', 'wb'))
 
+
+
     # try:
         # I store the results in a SQLite database so that it can resume from checkpoints.
         # study = optuna.create_study(study_name='ppo_direct', storage='sqlite:///params_select.db', load_if_exists=True)
@@ -173,13 +182,12 @@ if __name__ == "__main__":
         #train_once(graph, clusters, pos, compute_optimal=False)
 
 
-
-    RootState = game.State(graph, clusters, pos)
+    RootState = game.State(clusters)
     Root = nd.Node(RootState)
 
 
    #print(game.calculateOptimal(RootState))
-    x = MCTS.MCTS(Root, True)
+    x = MCTS.MCTS(Root, graph, True)
     x.Run()
 
 

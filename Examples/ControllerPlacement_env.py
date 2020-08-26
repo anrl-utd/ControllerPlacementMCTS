@@ -11,15 +11,9 @@ MAX_VOLUME = 10.0
 
 
 class State:
-    def __init__(self, graph: nx.Graph, clusters: list, pos: dict = None):
+    def __init__(self, clusters: list, ):
         self.selectedControllers = 0
-
-        if (pos is None):
-            self.pos = nx.kamada_kawai_layout(graph)  # get the positions of the nodes of the graph
-        else:
-            self.pos = pos
         self.clusters = clusters
-        self.graph = graph.copy()
         self.numberClusters = len(clusters)
         self.current_controllers = np.zeros((self.numberClusters,),
                                             dtype=int)  # Stores controllers placed in last action (used for rendering)
@@ -61,7 +55,7 @@ def GetActions(CurrentState):
     # -----------------------------------------------------------------------#
 
 def ApplyAction(CurrentState, Action):
-    state2 = game.State(CurrentState.graph, CurrentState.clusters, CurrentState.pos)
+    state2 = game.State(CurrentState.clusters)
     state2.current_controllers = CurrentState.current_controllers.copy()
     state2.selectedControllers = CurrentState.selectedControllers
 
@@ -133,7 +127,7 @@ def EvalNextStates(CurrentState):
     return NextStates
 
 
-def set_controllers(CurrentState):
+def set_controllers(CurrentState, graph: nx.graph):
     """
 	Creates metagraph of controllers
 	Args:
@@ -144,7 +138,7 @@ def set_controllers(CurrentState):
 	"""
 
     found_clusters = np.zeros((len(CurrentState.clusters)))  # Stores what clusters have controllers been found for
-    clusters = nx.get_node_attributes(CurrentState.graph, 'cluster')
+    clusters = nx.get_node_attributes(graph, 'cluster')
     index = 0
 
     valid_controllers = []
@@ -163,7 +157,7 @@ def set_controllers(CurrentState):
     # Add edges between controllers in metagraph
     for pair in itertools.combinations(new_contr_indices, 2):
         controller_graph.add_edge(pair[0][0], pair[1][0],
-                                  weight=nx.dijkstra_path_length(CurrentState.graph, source=pair[0][1],
+                                  weight=nx.dijkstra_path_length(graph, source=pair[0][1],
                                                                  target=pair[1][1]))
     return controller_graph
 
@@ -173,8 +167,8 @@ def set_controllers(CurrentState):
 """
 
 
-def GetResult(CurrentState):
-    controller_graph = set_controllers(CurrentState)
+def GetResult(CurrentState, graph: nx.graph):
+    controller_graph = set_controllers(CurrentState,graph)
     # Return output reward
 
     return controller_graph.size(weight='weight')*-1
