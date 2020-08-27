@@ -127,6 +127,14 @@ def EvalNextStates(CurrentState):
     return NextStates
 
 
+
+def GetResult(CurrentState, graph: nx.graph):
+    controller_graph = set_controllers(CurrentState,graph)
+    # Return output reward
+
+    return controller_graph.size(weight='weight')*-1
+
+
 def set_controllers(CurrentState, graph: nx.graph):
     """
 	Creates metagraph of controllers
@@ -149,53 +157,55 @@ def set_controllers(CurrentState, graph: nx.graph):
             valid_controllers.append(controller)
 
     # Controllers were found to be valid. Now add controllers to complete metagraph.
-    new_contr_indices = []
-    for i in range(len(valid_controllers)):
-        new_contr_indices.append([i, valid_controllers[i]])
-    controller_graph = nx.complete_graph(len(new_contr_indices))  # Store controller metagraph
+    # new_contr_indices = []
+    # for i in range(len(valid_controllers)):
+    #     new_contr_indices.append([i, valid_controllers[i]])
+    # controller_graph = nx.complete_graph(len(new_contr_indices))  # Store controller metagraph
+    #
+    # # Add edges between controllers in metagraph
+    # for pair in itertools.combinations(new_contr_indices, 2):
+    #     controller_graph.add_edge(pair[0][0], pair[1][0],
+    #                               weight=nx.dijkstra_path_length(graph, source=pair[0][1],
+    #                                                              target=pair[1][1]))
 
+    controller_graph = nx.Graph()  # Store controller metagraph
+    controller_graph.add_nodes_from(range(len(valid_controllers)))
     # Add edges between controllers in metagraph
-    for pair in itertools.combinations(new_contr_indices, 2):
-        controller_graph.add_edge(pair[0][0], pair[1][0],
-                                  weight=nx.dijkstra_path_length(graph, source=pair[0][1],
-                                                                 target=pair[1][1]))
+    for pair in itertools.combinations(valid_controllers, 2):
+        first_cluster = clusters[pair[0]]
+        second_cluster = clusters[pair[1]]
+        assert first_cluster != second_cluster, "2 controllers in same cluster in _set_controllers {} {}".format(
+            first_cluster, second_cluster)
+        if _get_adjacent_clusters(CurrentState, graph)[first_cluster][second_cluster] == 1:
+            controller_graph.add_edge(first_cluster, second_cluster,
+                                      weight=nx.dijkstra_path_length(graph, source=pair[0], target=pair[1]))
+
     return controller_graph
 
+
+def _get_adjacent_clusters(CurrentState, graph):
+    """
+    Gets which clusters are adjacent by iterating through all edges
+    Returns Numpy adjacency matrix of clusters
+    """
+    adjacency_matrix = np.zeros(shape=(len(CurrentState.clusters), len(CurrentState.clusters)), dtype=int)
+    graph_nodes = dict(graph.nodes(data='cluster'))
+    for edge in graph.edges():
+        # edge is (u, v) where u and v are node IDs
+        # node_1 = self.graph.nodes[edge[0]]['id']
+        # node_2 = self.graph.nodes[edge[1]]['id']
+        node_1 = edge[0]
+        node_2 = edge[1]
+        if graph_nodes[node_1] != graph_nodes[node_2]:
+            adjacency_matrix[graph_nodes[node_1], graph_nodes[node_2]] = 1
+            adjacency_matrix[graph_nodes[node_2], graph_nodes[node_1]] = 1
+    return adjacency_matrix
 
 """GetResult--Returns total distance between metagraph returned from setcontrollers
             (calculates distance between controllers)
 """
 
 
-def GetResult(CurrentState, graph: nx.graph):
-    controller_graph = set_controllers(CurrentState,graph)
-    # Return output reward
-
-    return controller_graph.size(weight='weight')*-1
 
 
 
-
-def step(self, action: list) -> int:
-
-    controller_graph = None  # Stores controller metagraph
-    # Create metagraph of controllers. The node at an index corresponds to the controller of the cluster of that index
-    controller_graph = self.set_controllers(action)
-    # Return output reward
-    return controller_graph.size(weight='weight')
-
-def calculateOptimal(self, state) -> (list, int):
-    """
-    Goes through all possible combinations of valid controllers and find best one.
-    Returns:
-        (List of best nodes, Best distance possible)
-    """
-    combinations = list(itertools.product(*state.clusters))
-    min_dist = 1000000
-    min_combination = None
-    for combination in combinations:
-        dist = self.step(combination)
-        if (dist < min_dist):
-            min_dist = dist
-            min_combination = combination
-    return (min_combination, min_dist)

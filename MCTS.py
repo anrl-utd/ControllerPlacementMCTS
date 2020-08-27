@@ -344,7 +344,7 @@ class MCTS:
     #	Runs the SP-MCTS.
     # MaxIter	- Maximum iterations to run the search algorithm.
     # -----------------------------------------------------------------------#
-    def Run(self, MaxIter=20000):
+    def Run(self, MaxIter=30000):
 
         # print(self.calculateOptimal())
 
