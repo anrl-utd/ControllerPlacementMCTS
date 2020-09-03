@@ -101,7 +101,7 @@ def IsTerminal(State):
 
 
 def GetStateRepresentation(State):
-    return 1
+    return State.current_controllers
 
 
 # Todo return state in string form

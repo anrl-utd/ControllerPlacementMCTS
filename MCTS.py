@@ -185,6 +185,9 @@ class MCTS:
         Result = game.GetResult(CurrentState,self.graph)
         print(CurrentState.current_controllers)
         print(Result)
+        # self.PrintResult(str(Result)+" Controllers: "+str(CurrentState.current_controllers))
+
+
         return Result
 
     # -----------------------------------------------------------------------#
@@ -234,7 +237,7 @@ class MCTS:
     # -----------------------------------------------------------------------#
     def EvalUTC(self, Node):
         # c = np.sqrt(2)
-        c = 0.5
+        c = .5
         w = Node.wins
         n = Node.visits
         sumsq = Node.ressq
@@ -344,14 +347,14 @@ class MCTS:
     #	Runs the SP-MCTS.
     # MaxIter	- Maximum iterations to run the search algorithm.
     # -----------------------------------------------------------------------#
-    def Run(self, MaxIter=30000):
+    def Run(self, MaxIter=20000):
 
         # print(self.calculateOptimal())
 
 
         y_list = []
 
-        minmax = -100000
+        minmax = -10000
         self.verbose = False
         for i in range(MaxIter):
             print(str(i)+": ")
@@ -373,7 +376,8 @@ class MCTS:
                 if self.verbose:
                     print("Result: ", Result)
                 self.Backpropagation(X, Result)
-            self.PrintResult(Result)
+            # self.PrintResult(Result)
+
             if Result > minmax:
                 minmax = Result
         print("score:"+str(minmax))

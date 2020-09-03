@@ -273,7 +273,7 @@ def generateAlternateGraph(num_clusters: int, num_nodes: int, weight_low: int = 
     pos = nx.spring_layout(G)
 
     # Draw graph
-    if draw:
+    if False:
         nx.draw_networkx_nodes(G, pos, node_color=node_colors)
         nx.draw_networkx_labels(G, pos)
         # nx.draw_networkx_edge_labels(G, pos)
@@ -290,34 +290,30 @@ def generateAlternateGraph(num_clusters: int, num_nodes: int, weight_low: int = 
 
 
 if __name__ == "__main__":
-    np.random.seed(100)
+    np.random.seed(110)
 
     graph = None
     clusters = None
     pos = None
     NUMBEROFNODES = 1000
     NUMBEROFCLUSTERS = 6
-    # This might be lazy code, but I think it is not worth importing more modules just to check if file exists before trying to open it
-    # if os.path.isfile('clusters.pickle') and os.path.isfile('graph.gpickle') and os.path.isfile('position.pickle'):
-    #     print("Found graph from file, using saved graph")
-    #     clusters = pickle.load(open('clusters.pickle', 'rb'))
-    #     pos = pickle.load(open('position.pickle', 'rb'))
-    #     graph = nx.read_gpickle('graph.gpickle')
-    #
-    #     node_colors = np.arange(0, NUMBEROFNODES, 1, np.uint8)  # Stores color of nodes
-    #     nx.draw_networkx_nodes(graph, pos, node_color=node_colors)
-    #     nx.draw_networkx_labels(graph, pos)
-    #     nx.draw_networkx_edges(graph, pos, graph.edges())
-    #     plt.draw()
-    #     plt.show()
+
+
+
+    if os.path.isfile('clusters.pickle') and os.path.isfile('graph.gpickle') and os.path.isfile('position.pickle'):
+        print("Found graph from file, using saved graph")
+        clusters = pickle.load(open('clusters.pickle', 'rb'))
+        pos = pickle.load(open('position.pickle', 'rb'))
+        graph = nx.read_gpickle('graph.gpickle')
+
     # else:
-    print("Generating graph")
-
-    graph, clusters, pos = generateAlternateGraph(NUMBEROFCLUSTERS,NUMBEROFNODES)
-
-    nx.write_gpickle(graph, 'graph.gpickle')
-    pickle.dump(clusters, open('clusters.pickle', 'wb'))
-    pickle.dump(pos, open('position.pickle', 'wb'))
+    #     print("Generating graph")
+    #
+    #     graph, clusters, pos = generateAlternateGraph(NUMBEROFCLUSTERS,NUMBEROFNODES)
+    #
+    #     nx.write_gpickle(graph, 'graph.gpickle')
+    #     pickle.dump(clusters, open('clusters.pickle', 'wb'))
+    #     pickle.dump(pos, open('position.pickle', 'wb'))
 
 
 
@@ -345,3 +341,20 @@ if __name__ == "__main__":
     #     nx.write_gpickle(graph, 'graph.gpickle')
     #     pickle.dump(clusters, open('clusters.pickle', 'wb'))
     #     pickle.dump(pos, open('position.pickle', 'wb'))
+
+
+
+
+    # y_list = []
+    #
+    # # print(self.calculateOptimal())
+    # with open('Results.txt') as f:
+    #     for line in f:
+    #         num = line.split()[0]
+    #         y_list.append(float(num))
+    #
+    # plt.plot([i for i in range(len(y_list))], y_list)
+    # plt.title('Max Score Vs Iteration Step')
+    # plt.xlabel('Iteration Step')
+    # plt.ylabel('Max Score')
+    # plt.show()
