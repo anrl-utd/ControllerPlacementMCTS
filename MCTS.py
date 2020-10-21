@@ -19,6 +19,7 @@ import os
 import copy
 import networkx as nx
 import itertools
+import  time
 
 # Import your game implementation here.
 from Examples import ControllerPlacement_env as game
@@ -39,6 +40,9 @@ class MCTS:
         self.root = Node
         self.verbose = Verbose
         self.graph = graph.copy()
+        self.maxControlers = []
+        self.maxScore = -100000
+        self.adjacencyMatrix = game._get_adjacent_clusters(Node.state,self.graph)
 
     # -----------------------------------------------------------------------#
     # Description: Performs selection phase of the MCTS.
@@ -99,7 +103,8 @@ class MCTS:
     # -----------------------------------------------------------------------#
     def Expansion(self, Leaf):
         if self.IsTerminal(Leaf):
-            print("Is Terminal.")
+            if self.verbose:
+                print("Is Terminal.")
             return False
         elif Leaf.visits == 0:  #has never been visited
             return Leaf
@@ -166,7 +171,11 @@ class MCTS:
     # -----------------------------------------------------------------------#
     def Simulation(self, Node):
         CurrentState = game.State(Node.state.clusters)
+
+
         CurrentState.current_controllers = Node.state.current_controllers.copy()
+
+
         CurrentState.selectedControllers = Node.state.selectedControllers
         # if(any(CurrentState) == False):
         #	return None
@@ -175,16 +184,24 @@ class MCTS:
 
         Level = self.GetLevel(Node)
         # Perform simulation.
+
         while not (game.IsTerminal(CurrentState)):
             CurrentState = game.GetNextState(CurrentState)
             Level += 1.0
             if self.verbose:
                 print("CurrentState:", game.GetStateRepresentation(CurrentState))
                 # game.PrintTablesScores(CurrentState)
+        copytime = time.time()
+        Result = game.GetResult(CurrentState,self.adjacencyMatrix,self.graph)
+        print("Sim time:" + str(time.time() - copytime))
 
-        Result = game.GetResult(CurrentState,self.graph)
-        print(CurrentState.current_controllers)
-        print(Result)
+        # if self.verbose:
+
+
+        if Result > self.maxScore:
+            self.maxScore = Result
+            self.maxControlers = CurrentState.current_controllers
+
         # self.PrintResult(str(Result)+" Controllers: "+str(CurrentState.current_controllers))
 
 
@@ -247,7 +264,7 @@ class MCTS:
             t = Node.parent.visits
 
         UTC = w / n + c * np.sqrt(np.log(t) / n)
-        D = 10000.
+        D = 10000
         Modification = np.sqrt((sumsq - n * (w / n) ** 2 + D) / n)
         # print "Original", UTC
         # print "Mod", Modification
@@ -336,7 +353,7 @@ class MCTS:
             newState = game.State(self.root.state.clusters)
             newState.current_controllers = combination
 
-            dist = game.GetResult(newState,self.graph)
+            dist = game.GetResult(newState,self.adjacencyMatrix,self.graph)
             if (dist > max_dist):
                 max_dist = dist
                 min_combination = combination
@@ -347,40 +364,72 @@ class MCTS:
     #	Runs the SP-MCTS.
     # MaxIter	- Maximum iterations to run the search algorithm.
     # -----------------------------------------------------------------------#
-    def Run(self, MaxIter=20000):
+    def Run(self, MaxIter=12500):
+        start_time0 = time.time()
+        # nS = game.State(self.root.state.clusters)
 
-        # print(self.calculateOptimal())
+        # arr = [ 62, 153, 254, 386, 495, 564, 656, 783, 880, 968]
+        # nS.current_controllers = arr
+        # print("TestScore")
+        # print(game.GetResult(nS, self.graph))
 
+
+        # print("optimal"+self.calculateOptimal())
+        self.maxControlers = []
 
         y_list = []
-
+        t_list = []
         minmax = -10000
         self.verbose = False
         for i in range(MaxIter):
-            print(str(i)+": ")
-            if self.verbose:
-                print("\n===== Begin iteration:", i, "=====")
+            start_time = time.time()
+
+            print("\n===== Begin iteration:", i, "=====")
             X = self.Selection()
+
             Y = self.Expansion(X)
+
             if Y:
+                simulation_time = time.time()
                 Result = self.Simulation(Y)
+                print("Simulation time:" + str(time.time() - simulation_time))
                 if self.verbose:
                     print("Result: ", Result)
+
+
                 self.Backpropagation(Y, Result)
+
                 y_list.append(Result)
             else:
-                Result = game.GetResult(X.state,self.graph)
+                Result = game.GetResult(X.state,self.adjacencyMatrix,self.graph)
                 y_list.append(Result)
-                print(X.state.current_controllers)
-                print(Result)
-                if self.verbose:
-                    print("Result: ", Result)
-                self.Backpropagation(X, Result)
-            # self.PrintResult(Result)
 
-            if Result > minmax:
-                minmax = Result
-        print("score:"+str(minmax))
+                if self.verbose:
+                    print(X.state.current_controllers)
+                    print(Result)
+
+
+                self.Backpropagation(X, Result)
+
+
+                if Result > self.maxScore:
+                    self.maxScore = Result
+                    self.maxControlers = X.state.current_controllers
+
+            t_list.append(time.time() - start_time)
+            print("--- %s seconds ---" % (time.time() - start_time))
+            self.PrintResult(Result)
+
+
+
+
+        print("----Finished----")
+        print("--- %s Total seconds ---" % (time.time() - start_time0))
+        print("score:"+str(self.maxScore))
+        print("max controllers: ")
+        print(self.maxControlers)
+
+
 
 
 
@@ -388,7 +437,14 @@ class MCTS:
         print("Iterations:", i)
 
         plt.plot( [i for i in range(MaxIter)],y_list)
-        plt.title('Max Score Vs Iteration Step')
+        plt.title(' Score Vs Iteration Step')
         plt.xlabel('Iteration Step')
-        plt.ylabel('Max Scor')
+        plt.ylabel('Max Score')
+        plt.show()
+
+
+        plt.plot( [i for i in range(MaxIter)],t_list)
+        plt.title('Time Vs Iteration Step')
+        plt.xlabel('Iteration Step')
+        plt.ylabel('Max Score')
         plt.show()

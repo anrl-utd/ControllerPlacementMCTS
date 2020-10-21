@@ -1,8 +1,9 @@
 import numpy as np
 import itertools
 import copy
-import networkx as nx
 from Examples import ControllerPlacement_env as game
+import networkx as nx
+import time
 
 # States are given as:
 # bins = np.array([v1, v2,..., vn])
@@ -33,13 +34,11 @@ class State:
 # returns list
 def GetActions(CurrentState):
     possibleActions = []
-    i = 0
-    for controller in np.nditer(CurrentState.current_controllers):
-        if controller == -1:
-            cluster = CurrentState.clusters[i]
-            for node in cluster:
-                possibleActions.append(node)
-        i += 1
+
+    cluster = CurrentState.clusters[CurrentState.selectedControllers]
+    for node in cluster:
+        possibleActions.append(node)
+
 
     # for each index i in CurrentState.controllers that  == 0
     # cluster CurrentState.clusters[i]
@@ -59,27 +58,8 @@ def ApplyAction(CurrentState, Action):
     state2.current_controllers = CurrentState.current_controllers.copy()
     state2.selectedControllers = CurrentState.selectedControllers
 
-    clustersCopy = CurrentState.clusters.copy()  # made need to do something like np.array(list(CurrentState.clusters),dtype=np.int32)
-    cluster = []
-    for set in clustersCopy:
-        cluster.append(list(set))
-    clusterIndex = -1
-    nodeIndex = -1
-
-    for x_index, x in enumerate(cluster):
-        for y_index, y in enumerate(x):
-            if y == Action:
-                nodeIndex = y_index
-                clusterIndex = x_index
-                break
-        if nodeIndex != -1:
-            break
-
-
-
-    controller_graph = None  # Stores controller metagraph
     state2.selectedControllers += 1
-    state2.current_controllers[clusterIndex] = Action
+    state2.current_controllers[CurrentState.selectedControllers] = Action
     return state2
 
 
@@ -128,14 +108,19 @@ def EvalNextStates(CurrentState):
 
 
 
-def GetResult(CurrentState, graph: nx.graph):
-    controller_graph = set_controllers(CurrentState,graph)
+def GetResult(CurrentState,adjacencyMatrix ,graph: nx.graph):
+
+    controller_graph = set_controllers(CurrentState,adjacencyMatrix,graph)
     # Return output reward
+    Result = controller_graph.size(weight='weight')*-1
+    print(CurrentState.current_controllers)
+    print(Result)
 
-    return controller_graph.size(weight='weight')*-1
+
+    return Result
 
 
-def set_controllers(CurrentState, graph: nx.graph):
+def set_controllers(CurrentState,adjacencyMatrix, graph: nx.graph):
     """
 	Creates metagraph of controllers
 	Args:
@@ -145,16 +130,21 @@ def set_controllers(CurrentState, graph: nx.graph):
 		Complete graph of controllers (metagraph)
 	"""
 
+    times = time.time()
     found_clusters = np.zeros((len(CurrentState.clusters)))  # Stores what clusters have controllers been found for
     clusters = nx.get_node_attributes(graph, 'cluster')
     index = 0
-
+    print(1)
+    print(time.time() - times)
+    times = time.time()
     valid_controllers = []
     for controller in CurrentState.current_controllers:
         # Multiple controllers in a cluster
         if found_clusters[clusters[controller]] == 0:
             found_clusters[clusters[controller]] = 1
             valid_controllers.append(controller)
+
+    print(time.time() - times)
 
     # Controllers were found to be valid. Now add controllers to complete metagraph.
     # new_contr_indices = []
@@ -170,16 +160,19 @@ def set_controllers(CurrentState, graph: nx.graph):
 
     controller_graph = nx.Graph()  # Store controller metagraph
     controller_graph.add_nodes_from(range(len(valid_controllers)))
+    times = time.time()
     # Add edges between controllers in metagraph
     for pair in itertools.combinations(valid_controllers, 2):
         first_cluster = clusters[pair[0]]
         second_cluster = clusters[pair[1]]
         assert first_cluster != second_cluster, "2 controllers in same cluster in _set_controllers {} {}".format(
             first_cluster, second_cluster)
-        if _get_adjacent_clusters(CurrentState, graph)[first_cluster][second_cluster] == 1:
+        if adjacencyMatrix[first_cluster][second_cluster] == 1:
             controller_graph.add_edge(first_cluster, second_cluster,
                                       weight=nx.dijkstra_path_length(graph, source=pair[0], target=pair[1]))
-
+    print("end set contr")
+    print(time.time() - times)
+    times = time.time()
     return controller_graph
 
 

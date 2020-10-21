@@ -8,6 +8,7 @@ import Node as nd
 import numpy as np
 import MCTS
 import random
+import time
 
 def generateGraph(num_clusters: int, num_nodes: int, prob_cluster: float = 0.5, prob: float = 0.2, weight_low: int = 0,
                   weight_high: int = 100, draw=True) -> (nx.Graph, list, dict):
@@ -290,13 +291,19 @@ def generateAlternateGraph(num_clusters: int, num_nodes: int, weight_low: int = 
 
 
 if __name__ == "__main__":
-    np.random.seed(110)
+    np.random.seed(((7000)))
+
+
+
+    start_time = time.time()
+
+
 
     graph = None
     clusters = None
     pos = None
-    NUMBEROFNODES = 1000
-    NUMBEROFCLUSTERS = 6
+    NUMBEROFNODES = 20000
+    NUMBEROFCLUSTERS = 10
 
 
 
@@ -306,14 +313,14 @@ if __name__ == "__main__":
         pos = pickle.load(open('position.pickle', 'rb'))
         graph = nx.read_gpickle('graph.gpickle')
 
-    # else:
-    #     print("Generating graph")
-    #
-    #     graph, clusters, pos = generateAlternateGraph(NUMBEROFCLUSTERS,NUMBEROFNODES)
-    #
-    #     nx.write_gpickle(graph, 'graph.gpickle')
-    #     pickle.dump(clusters, open('clusters.pickle', 'wb'))
-    #     pickle.dump(pos, open('position.pickle', 'wb'))
+    else:
+        print("Generating graph")
+
+        graph, clusters, pos = generateAlternateGraph(NUMBEROFCLUSTERS,NUMBEROFNODES)
+
+        nx.write_gpickle(graph, 'graph.gpickle')
+        pickle.dump(clusters, open('clusters.pickle', 'wb'))
+        pickle.dump(pos, open('position.pickle', 'wb'))
 
 
 
@@ -323,16 +330,17 @@ if __name__ == "__main__":
         # study.optimize(lambda trial: optimize_algorithm(trial, graph, clusters, pos), n_trials=500)
 
         #train_once(graph, clusters, pos, compute_optimal=False)
-
-
+    print("--- %s seconds ---" % (time.time() - start_time))
+    print("Generated graph")
     RootState = game.State(clusters)
     Root = nd.Node(RootState)
 
+    start_time = time.time()
 
    #print(game.calculateOptimal(RootState))
     x = MCTS.MCTS(Root, graph, True)
     x.Run()
-
+    print("--- %s seconds ---" % (time.time() - start_time))
 
 
     # except Exception as e:
