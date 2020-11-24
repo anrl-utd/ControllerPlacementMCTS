@@ -19,7 +19,7 @@ import os
 import copy
 import networkx as nx
 import itertools
-import  time
+import time
 
 # Import your game implementation here.
 from Examples import ControllerPlacement_env as game
@@ -36,19 +36,19 @@ class MCTS:
     # Verbose - True: Print details of search during execution.
     # 			False: Otherwise
     # -----------------------------------------------------------------------#
-    def __init__(self, Node, graph: nx.Graph, Verbose=False):
-        self.root = Node
+    def __init__(self, env: game, Verbose=False):
         self.verbose = Verbose
-        self.graph = graph.copy()
-        self.maxControlers = []
+
+        # tracks best controller set and best score
+        self.maxControllers = []
         self.maxScore = -100000
-        self.adjacencyMatrix = game._get_adjacent_clusters(Node.state,self.graph)
+        self.environment = env
 
     # -----------------------------------------------------------------------#
     # Description: Performs selection phase of the MCTS.
     # -----------------------------------------------------------------------#
     def Selection(self):
-        SelectedChild = self.root
+        SelectedChild = self.environment.root
         HasChild = False
 
         # Check if child nodes exist.
@@ -64,13 +64,13 @@ class MCTS:
         # SelectedChild.visits += 1.0
 
         if self.verbose:
-            print("\nSelected: ", game.GetStateRepresentation(SelectedChild.state))
+            print("\nSelected: ", self.environment.GetStateRepresentation(SelectedChild.state))
 
         return SelectedChild
 
     # -----------------------------------------------------------------------#
     # Description:
-    #	Given a Node, selects the first unvisited child Node, or if all
+    # Given a Node, selects the first unvisited child Node, or if all
     # 	children are visited, selects the Node with greatest UTC value.
     # Node	- Node from which to select child Node from.
     # -----------------------------------------------------------------------#
@@ -83,7 +83,7 @@ class MCTS:
                 continue
             else:
                 if self.verbose:
-                    print("Considered child", game.GetStateRepresentation(Child.state), "UTC: inf", )
+                    print("Considered child", self.environment.GetStateRepresentation(Child.state), "UTC: inf", )
                 return Child
 
         MaxWeight = -100000
@@ -91,7 +91,7 @@ class MCTS:
             # Weight = self.EvalUTC(Child)
             Weight = Child.sputc
             if self.verbose:
-                print("Considered child:", game.GetStateRepresentation(Child.state), "UTC:", Weight)
+                print("Considered child:", self.environment.GetStateRepresentation(Child.state), "UTC:", Weight)
             if Weight > MaxWeight:
                 MaxWeight = Weight
                 SelectedChild = Child
@@ -106,22 +106,22 @@ class MCTS:
             if self.verbose:
                 print("Is Terminal.")
             return False
-        elif Leaf.visits == 0:  #has never been visited
+        elif Leaf.visits == 0:  # has never been visited
             return Leaf
         else:
             # Expand.
-            if len(Leaf.children) == 0:                                 #adds children to node
+            if len(Leaf.children) == 0:  # adds children to node
                 Children = self.EvalChildren(Leaf)
 
                 for NewChild in Children:
-                    if np.all(NewChild.state == Leaf.state):            # comparator for state
+                    if np.all(NewChild.state == Leaf.state):  # comparator for state
                         continue
                     Leaf.AppendChild(NewChild)
             assert (len(Leaf.children) > 0), "Error"
             Child = self.SelectChildNode(Leaf)
 
         if self.verbose:
-            print("Expanded: ", game.GetStateRepresentation(Child.state))
+            print("Expanded: ", self.environment.GetStateRepresentation(Child.state))
         return Child
 
     # -----------------------------------------------------------------------#
@@ -130,12 +130,10 @@ class MCTS:
     # -----------------------------------------------------------------------#
     def IsTerminal(self, Node):
         # Evaluate if node is terminal.
-        if game.IsTerminal(Node.state):
+        if self.environment.IsTerminal(Node.state):
             return True
         else:
             return False
-
-    # return False # Why is this here?
 
     # -----------------------------------------------------------------------#
     # Description:
@@ -144,7 +142,7 @@ class MCTS:
     # Node	- Node from which to evaluate children.
     # -----------------------------------------------------------------------#
     def EvalChildren(self, Node):
-        NextStates = game.EvalNextStates(Node.state)
+        NextStates = self.environment.EvalNextStates(Node.state)
         Children = []
         for State in NextStates:
             ChildNode = nd.Node(State)
@@ -154,7 +152,7 @@ class MCTS:
 
     # -----------------------------------------------------------------------#
     # Description:
-    #	Selects a child node randomly.
+    # Selects a child node randomly.
     # Node	- Node from which to select a random child.
     # -----------------------------------------------------------------------#
     def SelectChildNode(self, Node):
@@ -166,15 +164,13 @@ class MCTS:
 
     # -----------------------------------------------------------------------#
     # Description:
-    #	Performs the simulation phase of the MCTS.
+    #Performs the simulation phase of the MCTS.
     # Node	- Node from which to perform simulation.
     # -----------------------------------------------------------------------#
     def Simulation(self, Node):
         CurrentState = game.State(Node.state.clusters)
 
-
         CurrentState.current_controllers = Node.state.current_controllers.copy()
-
 
         CurrentState.selectedControllers = Node.state.selectedControllers
         # if(any(CurrentState) == False):
@@ -185,25 +181,23 @@ class MCTS:
         Level = self.GetLevel(Node)
         # Perform simulation.
 
-        while not (game.IsTerminal(CurrentState)):
-            CurrentState = game.GetNextState(CurrentState)
+        while not (self.environment.IsTerminal(CurrentState)):
+            CurrentState = self.environment.GetNextState(CurrentState)
             Level += 1.0
             if self.verbose:
-                print("CurrentState:", game.GetStateRepresentation(CurrentState))
-                # game.PrintTablesScores(CurrentState)
+                print("CurrentState:", self.environment.GetStateRepresentation(CurrentState))
+                # self.environment.PrintTablesScores(CurrentState)
         copytime = time.time()
-        Result = game.GetResult(CurrentState,self.adjacencyMatrix,self.graph)
+        Result = self.environment.GetResult(CurrentState)
         print("Sim time:" + str(time.time() - copytime))
 
         # if self.verbose:
 
-
         if Result > self.maxScore:
             self.maxScore = Result
-            self.maxControlers = CurrentState.current_controllers
+            self.maxControllers = CurrentState.current_controllers
 
         # self.PrintResult(str(Result)+" Controllers: "+str(CurrentState.current_controllers))
-
 
         return Result
 
@@ -241,10 +235,8 @@ class MCTS:
     # Node - Node to check.
     # -----------------------------------------------------------------------#
     def HasParent(self, Node):
-        if Node.parent == None:
-            return False
-        else:
-            return True
+        return Node.parent is not None
+
 
     # -----------------------------------------------------------------------#
     # Description:
@@ -258,7 +250,7 @@ class MCTS:
         w = Node.wins
         n = Node.visits
         sumsq = Node.ressq
-        if Node.parent == None:
+        if Node.parent is None:
             t = Node.visits
         else:
             t = Node.parent.visits
@@ -289,7 +281,7 @@ class MCTS:
     # -----------------------------------------------------------------------#
     def PrintTree(self):
         f = open('Tree.txt', 'w')
-        Node = self.root
+        Node = self.environment.root
         self.PrintNode(f, Node, "", False)
         f.close()
 
@@ -312,7 +304,7 @@ class MCTS:
         string = str(self.GetLevel(Node)) + ") (["
         # for i in Node.state.bins: # game specific (scrap)
         # 	string += str(i) + ", "
-        string += str(game.GetStateRepresentation(Node.state))
+        string += str(self.environment.GetStateRepresentation(Node.state))
         string += "], W: " + str(Node.wins) + ", N: " + str(Node.visits) + ", UTC: " + str(Node.sputc) + ") \n"
         file.write(string)
 
@@ -330,9 +322,6 @@ class MCTS:
         f.write(str(Result) + '\n')
         f.close()
 
-
-
-
     def calculateOptimal(self) -> (list, int):
         """
         Goes through all possible combinations of valid controllers and find best one.
@@ -340,7 +329,7 @@ class MCTS:
             (List of best nodes, Best distance possible)
         """
 
-        clustersCopy = self.root.state.clusters.copy()  # made need to do something like np.array(list(CurrentState.clusters),dtype=np.int32)
+        clustersCopy = self.environment.root.state.clusters.copy()  # made need to do something like np.array(list(CurrentState.clusters),dtype=np.int32)
         clusters = []
         for set in clustersCopy:
             clusters.append(list(set))
@@ -348,12 +337,12 @@ class MCTS:
         combinations = list(itertools.product(*clusters))
         max_dist = -1000000
         min_combination = None
-        for i,combination in enumerate(combinations):
-            print(i,"  ",max_dist)
-            newState = game.State(self.root.state.clusters)
+        for i, combination in enumerate(combinations):
+            print(i, "  ", max_dist)
+            newState = game.State(self.environment.root.state.clusters)
             newState.current_controllers = combination
 
-            dist = game.GetResult(newState,self.adjacencyMatrix,self.graph)
+            dist = self.environment.GetResult(newState, self.environment.adjacencyMatrix, self.environment.graph)
             if (dist > max_dist):
                 max_dist = dist
                 min_combination = combination
@@ -364,18 +353,17 @@ class MCTS:
     #	Runs the SP-MCTS.
     # MaxIter	- Maximum iterations to run the search algorithm.
     # -----------------------------------------------------------------------#
-    def Run(self, MaxIter=12500):
+    def Run(self, MaxIter=40000):
         start_time0 = time.time()
         # nS = game.State(self.root.state.clusters)
 
         # arr = [ 62, 153, 254, 386, 495, 564, 656, 783, 880, 968]
         # nS.current_controllers = arr
         # print("TestScore")
-        # print(game.GetResult(nS, self.graph))
-
+        # print(self.environment.GetResult(nS, self.graph))
 
         # print("optimal"+self.calculateOptimal())
-        self.maxControlers = []
+        self.maxControllers = []
 
         y_list = []
         t_list = []
@@ -396,54 +384,43 @@ class MCTS:
                 if self.verbose:
                     print("Result: ", Result)
 
-
                 self.Backpropagation(Y, Result)
 
                 y_list.append(Result)
             else:
-                Result = game.GetResult(X.state,self.adjacencyMatrix,self.graph)
+                Result = self.environment.GetResult(X.state, self.environment.adjacencyMatrix, self.environment.graph)
                 y_list.append(Result)
 
                 if self.verbose:
                     print(X.state.current_controllers)
                     print(Result)
 
-
                 self.Backpropagation(X, Result)
-
 
                 if Result > self.maxScore:
                     self.maxScore = Result
-                    self.maxControlers = X.state.current_controllers
+                    self.maxControllers = X.state.current_controllers
 
             t_list.append(time.time() - start_time)
             print("--- %s seconds ---" % (time.time() - start_time))
             self.PrintResult(Result)
 
-
-
-
         print("----Finished----")
         print("--- %s Total seconds ---" % (time.time() - start_time0))
-        print("score:"+str(self.maxScore))
+        print("score:" + str(self.maxScore))
         print("max controllers: ")
-        print(self.maxControlers)
-
-
-
-
+        print(self.maxControllers)
 
         print("Search complete.")
         print("Iterations:", i)
 
-        plt.plot( [i for i in range(MaxIter)],y_list)
+        plt.plot([i for i in range(MaxIter)], y_list)
         plt.title(' Score Vs Iteration Step')
         plt.xlabel('Iteration Step')
         plt.ylabel('Max Score')
         plt.show()
 
-
-        plt.plot( [i for i in range(MaxIter)],t_list)
+        plt.plot([i for i in range(MaxIter)], t_list)
         plt.title('Time Vs Iteration Step')
         plt.xlabel('Iteration Step')
         plt.ylabel('Max Score')

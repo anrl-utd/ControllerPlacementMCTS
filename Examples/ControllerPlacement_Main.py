@@ -291,7 +291,7 @@ def generateAlternateGraph(num_clusters: int, num_nodes: int, weight_low: int = 
 
 
 if __name__ == "__main__":
-    np.random.seed(((7000)))
+    np.random.seed(((2000)))
 
 
 
@@ -302,9 +302,9 @@ if __name__ == "__main__":
     graph = None
     clusters = None
     pos = None
-    NUMBEROFNODES = 20000
+    NUMBEROFNODES = 30000
     NUMBEROFCLUSTERS = 10
-
+    finishtime1 = 0
 
 
     if os.path.isfile('clusters.pickle') and os.path.isfile('graph.gpickle') and os.path.isfile('position.pickle'):
@@ -315,13 +315,16 @@ if __name__ == "__main__":
 
     else:
         print("Generating graph")
+        start_time = time.time()
+
+
 
         graph, clusters, pos = generateAlternateGraph(NUMBEROFCLUSTERS,NUMBEROFNODES)
 
         nx.write_gpickle(graph, 'graph.gpickle')
         pickle.dump(clusters, open('clusters.pickle', 'wb'))
         pickle.dump(pos, open('position.pickle', 'wb'))
-
+        finishtime1 = time.time() - start_time
 
 
     # try:
@@ -332,16 +335,19 @@ if __name__ == "__main__":
         #train_once(graph, clusters, pos, compute_optimal=False)
     print("--- %s seconds ---" % (time.time() - start_time))
     print("Generated graph")
+
+
+
     RootState = game.State(clusters)
     Root = nd.Node(RootState)
-
     start_time = time.time()
+    environment = game.ControllerPlacement_env(Root,graph)
 
    #print(game.calculateOptimal(RootState))
-    x = MCTS.MCTS(Root, graph, True)
+    x = MCTS.MCTS(environment, True)
     x.Run()
-    print("--- %s seconds ---" % (time.time() - start_time))
-
+    print("--- %s Runtime seconds ---" % (time.time() - start_time))
+    print("--- %s seconds ---" %(finishtime1))
 
     # except Exception as e:
     #     print(e)
