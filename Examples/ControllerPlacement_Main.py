@@ -291,7 +291,7 @@ def generateAlternateGraph(num_clusters: int, num_nodes: int, weight_low: int = 
 
 
 if __name__ == "__main__":
-    np.random.seed(((2000)))
+    np.random.seed(((2005)))
 
 
 
@@ -302,7 +302,7 @@ if __name__ == "__main__":
     graph = None
     clusters = None
     pos = None
-    NUMBEROFNODES = 30000
+    NUMBEROFNODES = 1000
     NUMBEROFCLUSTERS = 10
     finishtime1 = 0
 

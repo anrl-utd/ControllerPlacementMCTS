@@ -126,9 +126,8 @@ class ControllerPlacement_env:
         found_clusters = np.zeros((len(CurrentState.clusters)))  # Stores what clusters have controllers been found for
         clusters = nx.get_node_attributes(self.graph, 'cluster')
         index = 0
-        print(1)
-        print(time.time() - times)
-        times = time.time()
+
+
         valid_controllers = []
         for controller in CurrentState.current_controllers:
             # Multiple controllers in a cluster
@@ -136,7 +135,7 @@ class ControllerPlacement_env:
                 found_clusters[clusters[controller]] = 1
                 valid_controllers.append(controller)
 
-        print(time.time() - times)
+
 
         # Controllers were found to be valid. Now add controllers to complete metagraph.
         # new_contr_indices = []
@@ -152,7 +151,7 @@ class ControllerPlacement_env:
 
         controller_graph = nx.Graph()  # Store controller metagraph
         controller_graph.add_nodes_from(range(len(valid_controllers)))
-        times = time.time()
+
         # Add edges between controllers in metagraph
         for pair in itertools.combinations(valid_controllers, 2):
             first_cluster = clusters[pair[0]]
@@ -161,9 +160,7 @@ class ControllerPlacement_env:
                 first_cluster, second_cluster)
             if self.adjacencyMatrix[first_cluster][second_cluster] == 1:
                 controller_graph.add_edge(first_cluster, second_cluster, weight=self._get_distance(pair[0], pair[1]))
-        print("end set contr")
-        print(time.time() - times)
-        times = time.time()
+
         return controller_graph
 
     def _get_adjacent_clusters(self, CurrentState):
@@ -202,3 +199,6 @@ class ControllerPlacement_env:
             distance = nx.dijkstra_path_length(self.graph, source=less_controller, target=greater_controller)
             self.controller_distances[(less_controller, greater_controller)] = distance
             return distance
+
+
+

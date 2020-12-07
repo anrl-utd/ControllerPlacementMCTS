@@ -86,7 +86,7 @@ class MCTS:
                     print("Considered child", self.environment.GetStateRepresentation(Child.state), "UTC: inf", )
                 return Child
 
-        MaxWeight = -100000
+        MaxWeight = -1000000000000
         for Child in Node.children:
             # Weight = self.EvalUTC(Child)
             Weight = Child.sputc
@@ -189,7 +189,7 @@ class MCTS:
                 # self.environment.PrintTablesScores(CurrentState)
         copytime = time.time()
         Result = self.environment.GetResult(CurrentState)
-        print("Sim time:" + str(time.time() - copytime))
+        # print("Sim time:" + str(time.time() - copytime))
 
         # if self.verbose:
 
@@ -214,7 +214,7 @@ class MCTS:
         CurrentNode.wins += Result
         CurrentNode.ressq += Result ** 2
         CurrentNode.visits += 1
-        self.EvalUTC(CurrentNode)
+        # self.EvalUTC(CurrentNode)
 
         while self.HasParent(CurrentNode):
             # Update parent node's weight.
@@ -222,7 +222,7 @@ class MCTS:
             CurrentNode.wins += Result
             CurrentNode.ressq += Result ** 2
             CurrentNode.visits += 1
-            self.EvalUTC(CurrentNode)
+            # self.EvalUTC(CurrentNode)
 
     # self.root.wins += Result
     # self.root.ressq += Result**2
@@ -246,7 +246,7 @@ class MCTS:
     # -----------------------------------------------------------------------#
     def EvalUTC(self, Node):
         # c = np.sqrt(2)
-        c = .5
+        c = 100
         w = Node.wins
         n = Node.visits
         sumsq = Node.ressq
@@ -255,12 +255,18 @@ class MCTS:
         else:
             t = Node.parent.visits
 
-        UTC = w / n + c * np.sqrt(np.log(t) / n)
-        D = 10000
+
+
+        UTC = w / n + c * np.sqrt(np.log(t)/n)
+        D = 0
+
         Modification = np.sqrt((sumsq - n * (w / n) ** 2 + D) / n)
         # print "Original", UTC
         # print "Mod", Modification
-        Node.sputc = UTC + Modification
+        if np.isnan(Modification):
+            Modification = 0
+        Node.sputc = UTC
+
         return Node.sputc
 
     # -----------------------------------------------------------------------#
@@ -310,6 +316,23 @@ class MCTS:
 
         for Child in Node.children:
             self.PrintNode(file, Child, Indent, self.IsTerminal(Child))
+
+
+
+
+
+    def checkUTCForEach(self, root: nd):
+        arr = root.children
+
+        for node in arr:
+            if node.visits > 0:
+                self.EvalUTC(node)
+                if len(node.children) > 0:
+                    self.checkUTCForEach(node)
+
+
+
+
 
     def PrintResult(self, Result):
         filename = 'Results.txt'
@@ -372,15 +395,18 @@ class MCTS:
         for i in range(MaxIter):
             start_time = time.time()
 
+            if i != 0:
+                self.checkUTCForEach(self.environment.root)
+
             print("\n===== Begin iteration:", i, "=====")
             X = self.Selection()
 
             Y = self.Expansion(X)
 
             if Y:
-                simulation_time = time.time()
+
                 Result = self.Simulation(Y)
-                print("Simulation time:" + str(time.time() - simulation_time))
+
                 if self.verbose:
                     print("Result: ", Result)
 
@@ -388,7 +414,7 @@ class MCTS:
 
                 y_list.append(Result)
             else:
-                Result = self.environment.GetResult(X.state, self.environment.adjacencyMatrix, self.environment.graph)
+                Result = self.environment.GetResult(X.state)
                 y_list.append(Result)
 
                 if self.verbose:
@@ -402,7 +428,7 @@ class MCTS:
                     self.maxControllers = X.state.current_controllers
 
             t_list.append(time.time() - start_time)
-            print("--- %s seconds ---" % (time.time() - start_time))
+            # print("--- %s seconds ---" % (time.time() - start_time))
             self.PrintResult(Result)
 
         print("----Finished----")
