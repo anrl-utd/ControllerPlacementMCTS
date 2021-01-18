@@ -12,7 +12,7 @@ MAX_VOLUME = 10.0
 
 
 class State:
-    def __init__(self, clusters: list, ):
+    def __init__(self, clusters: list ):
         self.selectedControllers = 0
         self.clusters = clusters
         self.numberClusters = len(clusters)
@@ -24,11 +24,12 @@ class State:
 
 
 class ControllerPlacement_env:
-    def __init__(self, Node, graph):
+    def __init__(self, Node, graph,prints=False):
         self.controller_distances = {}
         self.graph = graph.copy()
         self.root = Node
         self.adjacencyMatrix = self._get_adjacent_clusters(Node.state)
+        self.prints = prints
 
 
     # checks which clusters have selected a controller.
@@ -107,8 +108,9 @@ class ControllerPlacement_env:
         controller_graph = self.set_controllers(CurrentState)
         # Return output reward
         Result = controller_graph.size(weight='weight') * -1
-        print(CurrentState.current_controllers)
-        print(Result)
+        if self.prints:
+            print(CurrentState.current_controllers)
+            print(Result)
 
         return Result
 

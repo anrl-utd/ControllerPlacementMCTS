@@ -273,7 +273,7 @@ def generateAlternateGraph(num_clusters: int, num_nodes: int, weight_low: int = 
 
     pos = nx.spring_layout(G)
 
-    # Draw graph
+    # Draw graph if True
     if False:
         nx.draw_networkx_nodes(G, pos, node_color=node_colors)
         nx.draw_networkx_labels(G, pos)
@@ -291,20 +291,21 @@ def generateAlternateGraph(num_clusters: int, num_nodes: int, weight_low: int = 
 
 
 if __name__ == "__main__":
-    np.random.seed(((2005)))
-
-
 
     start_time = time.time()
-
-
+    finishtime1 = 0
 
     graph = None
     clusters = None
     pos = None
-    NUMBEROFNODES = 1000
+
+
+    # These are your two main parameters which determine what size graph is generated.
+    # In order to generate a new graph delete one of the pickle files
+
+    NUMBEROFNODES = 800
     NUMBEROFCLUSTERS = 10
-    finishtime1 = 0
+
 
 
     if os.path.isfile('clusters.pickle') and os.path.isfile('graph.gpickle') and os.path.isfile('position.pickle'):
@@ -326,37 +327,59 @@ if __name__ == "__main__":
         pickle.dump(pos, open('position.pickle', 'wb'))
         finishtime1 = time.time() - start_time
 
-
-    # try:
-        # I store the results in a SQLite database so that it can resume from checkpoints.
-        # study = optuna.create_study(study_name='ppo_direct', storage='sqlite:///params_select.db', load_if_exists=True)
-        # study.optimize(lambda trial: optimize_algorithm(trial, graph, clusters, pos), n_trials=500)
-
-        #train_once(graph, clusters, pos, compute_optimal=False)
     print("--- %s seconds ---" % (time.time() - start_time))
     print("Generated graph")
 
 
+    # Number of times that MCTS is run for a given graph on different seeds
+    test_iterations = 15
 
-    RootState = game.State(clusters)
-    Root = nd.Node(RootState)
-    start_time = time.time()
-    environment = game.ControllerPlacement_env(Root,graph)
+    max_score = 1000000
+    max_controllers = []
 
-   #print(game.calculateOptimal(RootState))
-    x = MCTS.MCTS(environment, True)
-    x.Run()
-    print("--- %s Runtime seconds ---" % (time.time() - start_time))
-    print("--- %s seconds ---" %(finishtime1))
+    score_controllers = []
 
-    # except Exception as e:
-    #     print(e)
-    #     print('Interrupted, saving . . . ')
-    #     nx.write_gpickle(graph, 'graph.gpickle')
-    #     pickle.dump(clusters, open('clusters.pickle', 'wb'))
-    #     pickle.dump(pos, open('position.pickle', 'wb'))
+    for i in range(test_iterations):
+        print("Begin test: "+str(i))
+        iter_time = time.time()
+        np.random.seed(i+65 )
 
 
+        # Set to true to see every iteation of a single MCTS test
+        prints = False # print each iteration
+
+        # Generating Environment for test
+        RootState = game.State(clusters)
+        Root = nd.Node(RootState)
+        start_time = time.time()
+        environment = game.ControllerPlacement_env(Root, graph, prints)
+
+        # Running MCTS Test with generated environment
+        x = MCTS.MCTS(environment, False, prints)
+        x.Run()
+
+        # Tracking results of MCTS test run
+        score_controllers.append([x.maxScore,x.maxControllers,"--- %s Runtime seconds ---" % (time.time() - iter_time)])
+        print([x.maxScore,x.maxControllers,"--- %s Runtime seconds ---" % (time.time() - iter_time)])
+
+        # Tracking best score
+        if x.maxScore > max_score:
+            max_score = x.maxScore
+            max_controllers = x.maxControllers
+        print("--- %s Runtime seconds ---" % (time.time() - iter_time))
+
+    sum = 0
+    for i in range(test_iterations):
+        print(score_controllers[i])
+        sum = sum + score_controllers[i][0]
+
+    # Print total results
+    print("Average: "+str(sum/test_iterations))
+    print("Best Score: "+str(max_score)+"---"+str(max_controllers))
+
+
+
+    # Calculating the Optimal Solution
 
 
     # y_list = []

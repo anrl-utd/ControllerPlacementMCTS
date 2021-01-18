@@ -36,13 +36,14 @@ class MCTS:
     # Verbose - True: Print details of search during execution.
     # 			False: Otherwise
     # -----------------------------------------------------------------------#
-    def __init__(self, env: game, Verbose=False):
+    def __init__(self, env: game, Verbose=False,prints=False):
         self.verbose = Verbose
 
         # tracks best controller set and best score
         self.maxControllers = []
         self.maxScore = -100000
         self.environment = env
+        self.prints = prints
 
     # -----------------------------------------------------------------------#
     # Description: Performs selection phase of the MCTS.
@@ -191,8 +192,6 @@ class MCTS:
         Result = self.environment.GetResult(CurrentState)
         # print("Sim time:" + str(time.time() - copytime))
 
-        # if self.verbose:
-
         if Result > self.maxScore:
             self.maxScore = Result
             self.maxControllers = CurrentState.current_controllers
@@ -255,7 +254,9 @@ class MCTS:
         else:
             t = Node.parent.visits
 
-
+        # if self.environment.IsTerminal(Node.state) and Node.visits > 1 or Node.isTerminal:
+        #     Node.sputc = -1000000
+        #     return -1000000
 
         UTC = w / n + c * np.sqrt(np.log(t)/n)
         D = 0
@@ -325,8 +326,12 @@ class MCTS:
         arr = root.children
 
         for node in arr:
-            if node.visits > 0:
+            if node.visits > 0: # and not node.isTerminal:
                 self.EvalUTC(node)
+
+                # if self.IsTerminal(node) or (len(node.children) > 0 and all( child.isTerminal is True for child in node.children)):
+                #     node.isTerminal = True
+                #     node.sputc = -10000000
                 if len(node.children) > 0:
                     self.checkUTCForEach(node)
 
@@ -376,7 +381,8 @@ class MCTS:
     #	Runs the SP-MCTS.
     # MaxIter	- Maximum iterations to run the search algorithm.
     # -----------------------------------------------------------------------#
-    def Run(self, MaxIter=40000):
+    def Run(self, MaxIter=20000,prints=False):
+        self.prints = prints
         start_time0 = time.time()
         # nS = game.State(self.root.state.clusters)
 
@@ -397,8 +403,8 @@ class MCTS:
 
             if i != 0:
                 self.checkUTCForEach(self.environment.root)
-
-            print("\n===== Begin iteration:", i, "=====")
+            if prints:
+                print("\n===== Begin iteration:", i, "=====")
             X = self.Selection()
 
             Y = self.Expansion(X)
@@ -429,25 +435,26 @@ class MCTS:
 
             t_list.append(time.time() - start_time)
             # print("--- %s seconds ---" % (time.time() - start_time))
-            self.PrintResult(Result)
+            # self.PrintResult(Result)
 
-        print("----Finished----")
-        print("--- %s Total seconds ---" % (time.time() - start_time0))
-        print("score:" + str(self.maxScore))
-        print("max controllers: ")
-        print(self.maxControllers)
+        if prints:
+            print("----Finished----")
+            print("--- %s Total seconds ---" % (time.time() - start_time0))
+            print("score:" + str(self.maxScore))
+            print("max controllers: ")
+            print(self.maxControllers)
 
-        print("Search complete.")
-        print("Iterations:", i)
+            print("Search complete.")
+            print("Iterations:", i)
 
-        plt.plot([i for i in range(MaxIter)], y_list)
-        plt.title(' Score Vs Iteration Step')
-        plt.xlabel('Iteration Step')
-        plt.ylabel('Max Score')
-        plt.show()
+            plt.plot([i for i in range(MaxIter)], y_list)
+            plt.title(' Score Vs Iteration Step')
+            plt.xlabel('Iteration Step')
+            plt.ylabel('Max Score')
+            plt.show()
 
-        plt.plot([i for i in range(MaxIter)], t_list)
-        plt.title('Time Vs Iteration Step')
-        plt.xlabel('Iteration Step')
-        plt.ylabel('Max Score')
-        plt.show()
+            plt.plot([i for i in range(MaxIter)], t_list)
+            plt.title('Time Vs Iteration Step')
+            plt.xlabel('Iteration Step')
+            plt.ylabel('Max Score')
+            plt.show()
