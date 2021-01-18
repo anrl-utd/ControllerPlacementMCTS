@@ -7,6 +7,7 @@ class Node:
         self.parent = None
         self.children = []
         self.sputc = 0.0
+        self.isTerminal = False
     
     def SetWeight(self, weight):
         self.weight = weight
