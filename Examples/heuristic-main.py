@@ -1,5 +1,5 @@
 import os
-import pickle
+import pickle5 as pickle
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt

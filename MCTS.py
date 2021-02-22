@@ -365,12 +365,13 @@ class MCTS:
         combinations = list(itertools.product(*clusters))
         max_dist = -1000000
         min_combination = None
+        print(len(combinations))
         for i, combination in enumerate(combinations):
-            print(i, "  ", max_dist)
+            # print(i, "  ", max_dist)
             newState = game.State(self.environment.root.state.clusters)
             newState.current_controllers = combination
 
-            dist = self.environment.GetResult(newState, self.environment.adjacencyMatrix, self.environment.graph)
+            dist = self.environment.GetResult(newState)
             if (dist > max_dist):
                 max_dist = dist
                 min_combination = combination
@@ -391,7 +392,7 @@ class MCTS:
         # print("TestScore")
         # print(self.environment.GetResult(nS, self.graph))
 
-        # print("optimal"+self.calculateOptimal())
+        # print("optimal"+str(self.calculateOptimal()))
         self.maxControllers = []
 
         y_list = []

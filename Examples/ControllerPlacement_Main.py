@@ -1,9 +1,9 @@
 import os
-import pickle
+import pickle5 as pickle
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
-from Examples import ControllerPlacement_env as game
+import ControllerPlacement_env as game
 import Node as nd
 import numpy as np
 import MCTS
@@ -277,7 +277,7 @@ def generateAlternateGraph(num_clusters: int, num_nodes: int, weight_low: int = 
     if False:
         nx.draw_networkx_nodes(G, pos, node_color=node_colors)
         nx.draw_networkx_labels(G, pos)
-        # nx.draw_networkx_edge_labels(G, pos)
+        nx.draw_networkx_edge_labels(G, pos)
         nx.draw_networkx_edges(G, pos, G.edges())
         plt.draw()
         plt.show()
@@ -303,8 +303,8 @@ if __name__ == "__main__":
     # These are your two main parameters which determine what size graph is generated.
     # In order to generate a new graph delete one of the pickle files
 
-    NUMBEROFNODES = 800
-    NUMBEROFCLUSTERS = 10
+    NUMBEROFNODES = 200
+    NUMBEROFCLUSTERS = 5
 
 
 
@@ -334,15 +334,19 @@ if __name__ == "__main__":
     # Number of times that MCTS is run for a given graph on different seeds
     test_iterations = 15
 
-    max_score = 1000000
+    max_score = -1000000
     max_controllers = []
 
+    min_score = 1000000
+    min_controllers = []
+
     score_controllers = []
+
 
     for i in range(test_iterations):
         print("Begin test: "+str(i))
         iter_time = time.time()
-        np.random.seed(i+65 )
+        np.random.seed(i+65)
 
 
         # Set to true to see every iteation of a single MCTS test
@@ -366,6 +370,10 @@ if __name__ == "__main__":
         if x.maxScore > max_score:
             max_score = x.maxScore
             max_controllers = x.maxControllers
+
+        if x.maxScore < min_score:
+            min_score = x.maxScore
+            min_controllers = x.maxControllers
         print("--- %s Runtime seconds ---" % (time.time() - iter_time))
 
     sum = 0
@@ -376,10 +384,8 @@ if __name__ == "__main__":
     # Print total results
     print("Average: "+str(sum/test_iterations))
     print("Best Score: "+str(max_score)+"---"+str(max_controllers))
+    print("Worst Score: " + str(min_score) + "---" + str(min_controllers))
 
-
-
-    # Calculating the Optimal Solution
 
 
     # y_list = []
