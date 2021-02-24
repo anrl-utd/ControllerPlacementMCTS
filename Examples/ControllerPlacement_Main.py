@@ -9,6 +9,8 @@ import numpy as np
 import MCTS
 import random
 import time
+import csv
+
 
 def generateGraph(num_clusters: int, num_nodes: int, prob_cluster: float = 0.5, prob: float = 0.2, weight_low: int = 0,
                   weight_high: int = 100, draw=True) -> (nx.Graph, list, dict):
@@ -85,7 +87,7 @@ def generateGraph(num_clusters: int, num_nodes: int, prob_cluster: float = 0.5, 
     return G, clusters, pos
 
 
-def generateClusters(graph: nx.Graph, edge_label: str=None) -> (nx.Graph, list, dict):
+def generateClusters(graph: nx.Graph, edge_label: str = None) -> (nx.Graph, list, dict):
     """
     Converts a normal NetworkX graph into a controller-placement graph by adding cluster attributes
     Args:
@@ -98,27 +100,29 @@ def generateClusters(graph: nx.Graph, edge_label: str=None) -> (nx.Graph, list, 
     """
     # Uses Clauset-Newman-Moore greedy modularity maximization algorithm to partition nodes into communities
     # it does not consider edge weights, sadly
-    new_graph = nx.relabel.convert_node_labels_to_integers(graph)  # Converts node IDs to ints in case they weren't before
+    new_graph = nx.relabel.convert_node_labels_to_integers(
+        graph)  # Converts node IDs to ints in case they weren't before
     clusters = list(nx.algorithms.community.greedy_modularity_communities(new_graph))
     # Add cluster attribute
     node_attrs = {}
     for i in range(len(clusters)):
         node_list = clusters[i]
         for node in node_list:
-            node_attrs[node] = {'cluster' : i }
+            node_attrs[node] = {'cluster': i}
     nx.set_node_attributes(new_graph, node_attrs)
 
     # Set random edge weights if no edge label is set
     if edge_label is None:
         for (u, v) in new_graph.edges():
-            new_graph.edges[u,v]['weight'] = random.randint(0,10)
+            new_graph.edges[u, v]['weight'] = random.randint(0, 10)
     else:
         # Use LinkSpeed (unit GB/s) edge attribute as weight
         edge_dict = nx.get_edge_attributes(new_graph, edge_label)
-        new_edges = { key: float(value) for key, value in edge_dict.items() }
+        new_edges = {key: float(value) for key, value in edge_dict.items()}
         nx.set_edge_attributes(new_graph, new_edges, 'weight')
 
     return new_graph, clusters, nx.kamada_kawai_layout(new_graph)
+
 
 def generateGraphAlt(num_nodes, num_clusters):
     print("Generating graph")
@@ -134,7 +138,6 @@ def generateGraphAlt(num_nodes, num_clusters):
     nx.write_gpickle(graph, 'graph.gpickle')
     pickle.dump(clusters, open('clusters.pickle', 'wb'))
     pickle.dump(pos, open('position.pickle', 'wb'))
-
 
     node_colors = np.arange(0, num_nodes, 1, np.uint8)  # Stores color of nodes
     if True:
@@ -192,14 +195,14 @@ def generateAlternateGraph(num_clusters: int, num_nodes: int, weight_low: int = 
     # set initial edge weight of first cluster
     for (u, v) in cluster.edges():
         cluster.edges[u, v]['weight'] = np.random.random() * 0.75 * (
-                    weight_high - weight_low) + weight_low + 0.25 * (weight_high - weight_low)
+                weight_high - weight_low) + weight_low + 0.25 * (weight_high - weight_low)
 
     inner_cluster_edges = np.random.randint(0, len(clusters[0]),
                                             (int(np.log2(len(clusters[0]))), 2))
 
     # add edge weights to new edges of first cluster
     inner_cluster_edges = [(u, v, np.random.random() * 0.75 * (weight_high - weight_low) + weight_low + 0.25 * (
-                weight_high - weight_low)) for u, v in inner_cluster_edges]
+            weight_high - weight_low)) for u, v in inner_cluster_edges]
     cluster.add_weighted_edges_from(inner_cluster_edges)
 
     G = nx.disjoint_union(G, cluster)
@@ -219,7 +222,7 @@ def generateAlternateGraph(num_clusters: int, num_nodes: int, weight_low: int = 
         for (u, v) in cluster.edges():
             if not (u in clusters[x][:len(clusters[x]) // 2]) or v in clusters[x][:len(clusters[x]) // 2]:
                 cluster.edges[u, v]['weight'] = np.random.random() * 0.20 * (
-                            weight_high - weight_low) + weight_low + 0.05 * (weight_high - weight_low)
+                        weight_high - weight_low) + weight_low + 0.05 * (weight_high - weight_low)
             else:
                 cluster.edges[u, v]['weight'] = np.random.random() * 0.05 * (weight_high - weight_low) + weight_low
 
@@ -230,7 +233,7 @@ def generateAlternateGraph(num_clusters: int, num_nodes: int, weight_low: int = 
         cluster_endpoints.append(cluster_endpoint)
         G.add_edge(cluster_endpoint, np.random.choice(clusters[i][(len(clusters[i]) // 2):]),
                    weight=np.random.random() * 0.20 * (weight_high - weight_low) + weight_low + 0.05 * (
-                               weight_high - weight_low))
+                           weight_high - weight_low))
 
     # adding inter and inner edges of the clusters
     closest_length = 1000
@@ -264,7 +267,7 @@ def generateAlternateGraph(num_clusters: int, num_nodes: int, weight_low: int = 
         inter_cluster_edges = [[y, np.random.randint(clusters[nearest_cluster][len(clusters[i]) // 2],
                                                      clusters[nearest_cluster][-1] + 1),
                                 np.random.random() * 0.20 * (weight_high - weight_low) + weight_low + 0.05 * (
-                                            weight_high - weight_low)] for y in
+                                        weight_high - weight_low)] for y in
                                inter_cluster_edges]
 
         # cluster.add_weighted_edges_from(inner_cluster_edges)
@@ -285,11 +288,6 @@ def generateAlternateGraph(num_clusters: int, num_nodes: int, weight_low: int = 
     return G, clusters, pos
 
 
-
-
-
-
-
 if __name__ == "__main__":
 
     start_time = time.time()
@@ -299,94 +297,97 @@ if __name__ == "__main__":
     clusters = None
     pos = None
 
-
     # These are your two main parameters which determine what size graph is generated.
     # In order to generate a new graph delete one of the pickle files
+    file = open('graph_runs/graph_results.csv', 'w', newline='')
+    writer = csv.writer(file)
 
-    NUMBEROFNODES = 200
-    NUMBEROFCLUSTERS = 5
+    for i in range(35):
+        print("\n\n\nGRAPH: {}".format(i)+"\n")
+        graph = nx.read_gpickle('100Graphs/graph_{}.gpickle'.format(i))
+        cluster_info = nx.get_node_attributes(graph, 'cluster')
+        clusters_array = np.array(list(cluster_info.items()),
+                                  dtype=np.int32)  # Construct numpy array as [[node num, cluster num], [..]]
 
+        number_of_clusters = clusters_array[len(clusters_array) - 1][1] + 1
 
+        rows = number_of_clusters
+        clusters = [[-1] for _ in range(rows)]
 
-    if os.path.isfile('clusters.pickle') and os.path.isfile('graph.gpickle') and os.path.isfile('position.pickle'):
-        print("Found graph from file, using saved graph")
-        clusters = pickle.load(open('clusters.pickle', 'rb'))
-        pos = pickle.load(open('position.pickle', 'rb'))
-        graph = nx.read_gpickle('graph.gpickle')
+        for index in range(len(clusters_array)):
+            node = clusters_array[index][0]
+            cluster = clusters_array[index][1]
 
-    else:
-        print("Generating graph")
-        start_time = time.time()
+            if clusters[cluster][0] == -1:
+                clusters[cluster][0] = node
+            else:
+                clusters[cluster].append(node)
 
+        # Number of times that MCTS is run for a given graph on different seeds
+        NUMBER_ITERATIONS = 15
+        PRINT = True
+        max_score = -1000000
+        max_controllers = []
 
+        min_score = 1000000
+        min_controllers = []
 
-        graph, clusters, pos = generateAlternateGraph(NUMBEROFCLUSTERS,NUMBEROFNODES)
+        score_controllers = []
 
-        nx.write_gpickle(graph, 'graph.gpickle')
-        pickle.dump(clusters, open('clusters.pickle', 'wb'))
-        pickle.dump(pos, open('position.pickle', 'wb'))
-        finishtime1 = time.time() - start_time
+        for k in range(NUMBER_ITERATIONS):
+            if PRINT:
+                print("iteration: " + str(i)+"\n")
+            iter_time = time.time()
+            np.random.seed(i + 65)
 
-    print("--- %s seconds ---" % (time.time() - start_time))
-    print("Generated graph")
+            # Set to true to see every iteation of a single MCTS test
+            prints = False  # print each iteration
 
+            # Generating Environment for test
+            RootState = game.State(clusters)
+            Root = nd.Node(RootState)
+            start_time = time.time()
+            environment = game.ControllerPlacement_env(Root, graph, prints)
 
-    # Number of times that MCTS is run for a given graph on different seeds
-    test_iterations = 15
+            # Running MCTS Test with generated environment
+            x = MCTS.MCTS(environment, False, prints)
+            x.Run()
 
-    max_score = -1000000
-    max_controllers = []
+            # Tracking results of MCTS test run
+            score_controllers.append(
+                [x.maxScore, x.maxControllers, "--- %s Runtime seconds ---" % (time.time() - iter_time)])
+            if PRINT:
+                print([x.maxScore, x.maxControllers, "--- %s Runtime seconds ---" % (time.time() - iter_time)])
 
-    min_score = 1000000
-    min_controllers = []
+            # Tracking best score
+            if x.maxScore > max_score:
+                max_score = x.maxScore
+                max_controllers = x.maxControllers
 
-    score_controllers = []
+            if x.maxScore < min_score:
+                min_score = x.maxScore
+                min_controllers = x.maxControllers
+            if PRINT:
+                print("--- %s Runtime seconds ---" % (time.time() - iter_time))
 
+        sum = 0
+        for i in range(NUMBER_ITERATIONS):
+            print(score_controllers[i])
+            sum = sum + score_controllers[i][0]
 
-    for i in range(test_iterations):
-        print("Begin test: "+str(i))
-        iter_time = time.time()
-        np.random.seed(i+65)
+        # Print total results
+        if PRINT:
+            print("Average: " + str(sum / NUMBER_ITERATIONS))
+            print("Best Score: " + str(max_score) + "---" + str(max_controllers))
+            print("Worst Score: " + str(min_score) + "---" + str(min_controllers))
+        # file.write("Average: " + str(sum / NUMBER_ITERATIONS)+"\n")
+        # file.write("Best Score: " + str(max_score) + "---" + str(max_controllers)+"\n")
+        # file.write("Worst Score: " + str(min_score) + "---" + str(min_controllers)+"\n")
+        writer.writerow([str(sum / NUMBER_ITERATIONS), str(max_score) , str(min_score), str(max_controllers), str(min_controllers)])
 
-
-        # Set to true to see every iteation of a single MCTS test
-        prints = False # print each iteration
-
-        # Generating Environment for test
-        RootState = game.State(clusters)
-        Root = nd.Node(RootState)
-        start_time = time.time()
-        environment = game.ControllerPlacement_env(Root, graph, prints)
-
-        # Running MCTS Test with generated environment
-        x = MCTS.MCTS(environment, False, prints)
-        x.Run()
-
-        # Tracking results of MCTS test run
-        score_controllers.append([x.maxScore,x.maxControllers,"--- %s Runtime seconds ---" % (time.time() - iter_time)])
-        print([x.maxScore,x.maxControllers,"--- %s Runtime seconds ---" % (time.time() - iter_time)])
-
-        # Tracking best score
-        if x.maxScore > max_score:
-            max_score = x.maxScore
-            max_controllers = x.maxControllers
-
-        if x.maxScore < min_score:
-            min_score = x.maxScore
-            min_controllers = x.maxControllers
-        print("--- %s Runtime seconds ---" % (time.time() - iter_time))
-
-    sum = 0
-    for i in range(test_iterations):
-        print(score_controllers[i])
-        sum = sum + score_controllers[i][0]
-
-    # Print total results
-    print("Average: "+str(sum/test_iterations))
-    print("Best Score: "+str(max_score)+"---"+str(max_controllers))
-    print("Worst Score: " + str(min_score) + "---" + str(min_controllers))
-
-
+        print("Finished test: {}".format(k))
+    file.close()
+    print("FINISHED")
 
     # y_list = []
     #
