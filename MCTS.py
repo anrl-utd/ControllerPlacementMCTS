@@ -22,7 +22,7 @@ import itertools
 import time
 
 # Import your game implementation here.
-from Examples import ControllerPlacement_env as game
+from MCTS_ENV import ControllerPlacement_MCTS_env as game
 
 
 # ------------------------------------------------------------------------#
@@ -213,15 +213,25 @@ class MCTS:
         CurrentNode.wins += Result
         CurrentNode.ressq += Result ** 2
         CurrentNode.visits += 1
-        # self.EvalUTC(CurrentNode)
+
 
         while self.HasParent(CurrentNode):
             # Update parent node's weight.
+            previousNode = CurrentNode
             CurrentNode = CurrentNode.parent
+
             CurrentNode.wins += Result
             CurrentNode.ressq += Result ** 2
             CurrentNode.visits += 1
-            # self.EvalUTC(CurrentNode)
+
+            NodesToUpdate = CurrentNode.children
+            for node in NodesToUpdate:
+                if node.visits > 0:
+                    self.EvalUTC(node)
+
+
+
+
 
     # self.root.wins += Result
     # self.root.ressq += Result**2
@@ -321,7 +331,7 @@ class MCTS:
 
 
 
-
+    # dont need actually. Instead in backpropagation just increment up and then update the UTC foreach sibling with array
     def checkUTCForEach(self, root: nd):
         arr = root.children
 
@@ -402,8 +412,8 @@ class MCTS:
         for i in range(MaxIter):
             start_time = time.time()
 
-            if i != 0:
-                self.checkUTCForEach(self.environment.root)
+            # if i != 0:
+            #     self.checkUTCForEach(self.environment.root)
             if prints:
                 print("\n===== Begin iteration:", i, "=====")
             X = self.Selection()
