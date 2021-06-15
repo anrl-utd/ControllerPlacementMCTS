@@ -264,21 +264,19 @@ class MCTS:
         else:
             t = Node.parent.visits
 
-        # if self.environment.IsTerminal(Node.state) and Node.visits > 1 or Node.isTerminal:
-        #     Node.sputc = -1000000
-        #     return -1000000
-
         UTC = w / n + c * np.sqrt(np.log(t)/n)
-        D = 0
 
-        Modification = np.sqrt((sumsq - n * (w / n) ** 2 + D) / n)
-        # print "Original", UTC
-        # print "Mod", Modification
-        if np.isnan(Modification):
-            Modification = 0
         Node.sputc = UTC
 
         return Node.sputc
+        # D = 0
+        #
+        # Modification = np.sqrt((sumsq - n * (w / n) ** 2 + D) / n)
+        # # print "Original", UTC
+        # # print "Mod", Modification
+        # if np.isnan(Modification):
+        #     Modification = 0
+
 
     # -----------------------------------------------------------------------#
     # Description:

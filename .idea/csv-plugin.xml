@@ -45,6 +45,41 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\MCTS_ENV\ControllerEnv.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\MCTS_ENV\ControllerPlacement_MCTS_env.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\MCTS_ENV\ControllerPlacement_Main_MultiTest.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\MCTS_ENV\ControllerPlacement_Main_SingleTest.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\MCTS_ENV\Graphs\graph_results\graph_results_9.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
       </map>
     </option>
   </component>

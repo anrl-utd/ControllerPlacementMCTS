@@ -80,57 +80,57 @@ if __name__ == "__main__":
 
     score_controllers = []
 
-    for k in range(NUMBER_ITERATIONS):
-        if PRINT:
-            print("iteration: " + str(k)+"\n")
-        iter_time = time.time()
-        np.random.seed(k + SEED)
+    # for k in range(NUMBER_ITERATIONS):
+    #     if PRINT:
+    #         print("iteration: " + str(k)+"\n")
+    #     iter_time = time.time()
+    #     np.random.seed(k + SEED)
+    #
+    #     # Set to true to see every iteation of a single MCTS test
+    #     prints = False  # print each iteration
+    #
+    #     # Generating Environment for test
+    #     RootState = game.State(clusters)
+    #     Root = nd.Node(RootState)
+    #     start_time = time.time()
+    #     environment = game.ControllerPlacement_env(Root, graph, prints)
+    #
+    #     # Running MCTS Test with generated environment
+    #     x = MCTS.MCTS(environment, False, prints)
+    #     x.Run()
+    #
+    #     # Tracking results of MCTS test run
+    #     score_controllers.append(
+    #         [x.maxScore, x.maxControllers, "--- %s Runtime seconds ---" % (time.time() - iter_time)])
+    #     if PRINT:
+    #         print([x.maxScore, x.maxControllers, "--- %s Runtime seconds ---" % (time.time() - iter_time)])
+    #
+    #     # Tracking best score
+    #     if x.maxScore > max_score:
+    #         max_score = x.maxScore
+    #         max_controllers = x.maxControllers
+    #
+    #     if x.maxScore < min_score:
+    #         min_score = x.maxScore
+    #         min_controllers = x.maxControllers
+    #     if PRINT:
+    #         print("--- %s Runtime seconds ---" % (time.time() - iter_time))
 
-        # Set to true to see every iteation of a single MCTS test
-        prints = False  # print each iteration
-
-        # Generating Environment for test
-        RootState = game.State(clusters)
-        Root = nd.Node(RootState)
-        start_time = time.time()
-        environment = game.ControllerPlacement_env(Root, graph, prints)
-
-        # Running MCTS Test with generated environment
-        x = MCTS.MCTS(environment, False, prints)
-        x.Run()
-
-        # Tracking results of MCTS test run
-        score_controllers.append(
-            [x.maxScore, x.maxControllers, "--- %s Runtime seconds ---" % (time.time() - iter_time)])
-        if PRINT:
-            print([x.maxScore, x.maxControllers, "--- %s Runtime seconds ---" % (time.time() - iter_time)])
-
-        # Tracking best score
-        if x.maxScore > max_score:
-            max_score = x.maxScore
-            max_controllers = x.maxControllers
-
-        if x.maxScore < min_score:
-            min_score = x.maxScore
-            min_controllers = x.maxControllers
-        if PRINT:
-            print("--- %s Runtime seconds ---" % (time.time() - iter_time))
-
-    sum = 0
-    for iter in range(NUMBER_ITERATIONS):
-        # print(score_controllers[i])
-        sum = sum + score_controllers[iter][0]
+    # sum = 0
+    # for iter in range(NUMBER_ITERATIONS):
+    #     # print(score_controllers[i])
+    #     sum = sum + score_controllers[iter][0]
 
     heuristic_env = ControllerEnv(graph, clusters)
-    heuristic_controllers, heuristic = heuristic_env.graphCentroidAction()
+    # heuristic_controllers, heuristic = heuristic_env.graphCentroidAction()
     greedy_heuristic_controllers, greedy_heuristic = heuristic_env.compute_greedy_heuristic()
 
     # Print total results
     if PRINT:
-        print("Average: " + str(-1*sum / NUMBER_ITERATIONS))
-        print("Best Score: " + str(-1*max_score) + "---" + str(max_controllers))
-        print("Worst Score: " + str(-1*min_score) + "---" + str(min_controllers))
-        print("Heuristic: "+str(heuristic_controllers)+"  "+ str(heuristic))
+        # print("Average: " + str(-1*sum / NUMBER_ITERATIONS))
+        # print("Best Score: " + str(-1*max_score) + "---" + str(max_controllers))
+        # print("Worst Score: " + str(-1*min_score) + "---" + str(min_controllers))
+        # print("Heuristic: "+str(heuristic_controllers)+"  "+ str(heuristic))
         print("Greedy_Heuristic: " + str(greedy_heuristic_controllers) + "  " + str(greedy_heuristic))
 
     print("Finished test")

@@ -139,18 +139,6 @@ class ControllerPlacement_env:
 
 
 
-        # Controllers were found to be valid. Now add controllers to complete metagraph.
-        # new_contr_indices = []
-        # for i in range(len(valid_controllers)):
-        #     new_contr_indices.append([i, valid_controllers[i]])
-        # controller_graph = nx.complete_graph(len(new_contr_indices))  # Store controller metagraph
-        #
-        # # Add edges between controllers in metagraph
-        # for pair in itertools.combinations(new_contr_indices, 2):
-        #     controller_graph.add_edge(pair[0][0], pair[1][0],
-        #                               weight=nx.dijkstra_path_length(graph, source=pair[0][1],
-        #                                                              target=pair[1][1]))
-
         controller_graph = nx.Graph()  # Store controller metagraph
         controller_graph.add_nodes_from(range(len(valid_controllers)))
 
@@ -187,20 +175,26 @@ class ControllerPlacement_env:
         """
             Returns distance between two controllers and uses dynamic programming to save some computation time
             """
-        less_controller = None
-        greater_controller = None
-        if controller_1 < controller_2:
-            less_controller = controller_1
-            greater_controller = controller_2
-        else:
-            less_controller = controller_2
-            greater_controller = controller_1
-        if (less_controller, greater_controller) in self.controller_distances:
-            return self.controller_distances[(less_controller, greater_controller)]
-        else:
-            distance = nx.dijkstra_path_length(self.graph, source=less_controller, target=greater_controller)
-            self.controller_distances[(less_controller, greater_controller)] = distance
-            return distance
+        # less_controller = None
+        # greater_controller = None
+        # if controller_1 < controller_2:
+        #     less_controller = controller_1
+        #     greater_controller = controller_2
+        # else:
+        #     less_controller = controller_2
+        #     greater_controller = controller_1
+        # if (less_controller, greater_controller) in self.controller_distances:
+        #     return self.controller_distances[(less_controller, greater_controller)]
+        # else:
+        #     distance = nx.dijkstra_path_length(self.graph, source=less_controller, target=greater_controller)
+        #     self.controller_distances[(less_controller, greater_controller)] = distance
+        #     return distance
 
+
+        try:
+            return  nx.dijkstra_path_length(self.graph, source=controller_1, target=controller_2)
+        except ValueError:
+            print("Found negative weights in graph!")
+            raise ValueError
 
 

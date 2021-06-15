@@ -381,7 +381,8 @@ class ControllerEnv(gym.Env):
                 weights.append(weight)
             controller_set.append(weights.index(min(weights)) + weights_index)  # Add node index to controller list
             weights_index += len(self.clusters[i])
-        return controller_set, self.step(controller_set)  # Return controller list and corresponding cost (minimum distance between all controllers)
+        return controller_set, self.step(
+            controller_set)  # Return controller list and corresponding cost (minimum distance between all controllers)
 
 
 def generateGraph(num_clusters: int, num_nodes: int, prob_cluster: float = 0.5, prob: float = 0.2, weight_low: int = 0,
@@ -477,7 +478,6 @@ def generateAlternateGraph(num_clusters: int, num_nodes: int, weight_low: int = 
         weight_low: Lowest possible weight for edge in graph
         weight_high: Highest possible weight for edge in graph
         draw: Whether or not to show graph (True indicates to show)
-
     Returns:
         Graph with nodes in clusters, array of clusters, graph position for drawing
     """
@@ -512,16 +512,13 @@ def generateAlternateGraph(num_clusters: int, num_nodes: int, weight_low: int = 
 
     # set initial edge weight of first cluster
     for (u, v) in cluster.edges():
-        cluster.edges[u, v]['weight'] = np.random.random() * 0.75 * (weight_high - weight_low) + weight_low + 0.25 * (
-                    weight_high - weight_low)
+        cluster.edges[u, v]['weight'] = np.random.normal(100, 25)
 
     inner_cluster_edges = np.random.randint(0, len(clusters[0]),
                                             (int(np.log2(len(clusters[0]))), 2))
 
     # add edge weights to new edges of first cluster
-    inner_cluster_edges = [
-        (u, v, np.random.random() * 0.75 * (weight_high - weight_low) + weight_low + 0.25 * (weight_high - weight_low))
-        for u, v in inner_cluster_edges]
+    inner_cluster_edges = [(u, v, np.random.normal(100, 25)) for u, v in inner_cluster_edges]
     cluster.add_weighted_edges_from(inner_cluster_edges)
 
     G = nx.disjoint_union(G, cluster)
@@ -540,10 +537,9 @@ def generateAlternateGraph(num_clusters: int, num_nodes: int, weight_low: int = 
         # set initial edge weights
         for (u, v) in cluster.edges():
             if not (u in clusters[x][:len(clusters[x]) // 2]) or v in clusters[x][:len(clusters[x]) // 2]:
-                cluster.edges[u, v]['weight'] = np.random.random() * 0.20 * (
-                            weight_high - weight_low) + weight_low + 0.05 * (weight_high - weight_low)
+                cluster.edges[u, v]['weight'] = np.random.normal(100, 10)
             else:
-                cluster.edges[u, v]['weight'] = np.random.random() * 0.05 * (weight_high - weight_low) + weight_low
+                cluster.edges[u, v]['weight'] = np.random.normal(100, 10)
 
         G = nx.disjoint_union(G, cluster)
 
@@ -551,8 +547,7 @@ def generateAlternateGraph(num_clusters: int, num_nodes: int, weight_low: int = 
         cluster_endpoint = np.random.randint(0, len(clusters[0]))
         cluster_endpoints.append(cluster_endpoint)
         G.add_edge(cluster_endpoint, np.random.choice(clusters[i][(len(clusters[i]) // 2):]),
-                   weight=np.random.random() * 0.20 * (weight_high - weight_low) + weight_low + 0.05 * (
-                               weight_high - weight_low))
+                   weight=np.random.normal(100, 10))
 
     # adding inter and inner edges of the clusters
     closest_length = 1000
@@ -570,7 +565,7 @@ def generateAlternateGraph(num_clusters: int, num_nodes: int, weight_low: int = 
         # get two random points inside a cluster
         inner_cluster_edges = np.random.randint(clusters[i][0], clusters[i][-1] + 1,
                                                 (int(np.log2(len(clusters[i]))), 2))
-        inner_cluster_edges = [(u, v, np.random.random() * 0.05 * (weight_high - weight_low) + weight_low) for
+        inner_cluster_edges = [(u, v, np.random.normal(100, 10)) for
                                u, v in inner_cluster_edges]
         # cluster.add_weighted_edges_from(inner_cluster_edges)
         G.add_weighted_edges_from(inner_cluster_edges)
@@ -584,9 +579,8 @@ def generateAlternateGraph(num_clusters: int, num_nodes: int, weight_low: int = 
                                                 (int(len(clusters[i]) / (
                                                         np.random.randint(0, (np.log2(len(clusters[i])))) + 1))))
         inter_cluster_edges = [[y, np.random.randint(clusters[nearest_cluster][len(clusters[i]) // 2],
-                                                     clusters[nearest_cluster][-1] + 1),
-                                np.random.random() * 0.20 * (weight_high - weight_low) + weight_low + 0.05 * (
-                                            weight_high - weight_low)] for y in
+                                                     clusters[nearest_cluster][-1] + 1), np.random.normal(100, 10)] for
+                               y in
                                inter_cluster_edges]
 
         # cluster.add_weighted_edges_from(inner_cluster_edges)
