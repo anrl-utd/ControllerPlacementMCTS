@@ -17,9 +17,9 @@ from MCTS_ENV.ControllerEnv import generateGraph, generateAlternateGraph, genera
 if __name__ == "__main__":
 
     CREATEGRAPHS = False # else it will read in graphs
-    LOCATION = "Graphs/SingleGraph/"
-    SEED = 650
-    NUMBER_ITERATIONS = 20
+    LOCATION = "Graphs/time_graph_files/3_08_2022_C=10/graph_24/"
+    SEED = 4001
+    NUMBER_ITERATIONS = 100
     PRINT = True
 
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     if CREATEGRAPHS or not (os.path.isfile(LOCATION+'clusters.pickle') and os.path.isfile(LOCATION+'graph.gpickle') and os.path.isfile(LOCATION+'position.pickle')):
         NUMBEROFNODES = 500
-        NUMBEROFCLUSTERS = 50
+        NUMBEROFCLUSTERS = 10
         graph, clusters, pos = generateAlternateGraph(NUMBEROFCLUSTERS,NUMBEROFNODES)
 
         nx.write_gpickle(graph, LOCATION+'graph.gpickle')
@@ -80,73 +80,76 @@ if __name__ == "__main__":
 
     score_controllers = []
 
-    # for k in range(NUMBER_ITERATIONS):
-    #     if PRINT:
-    #         print("iteration: " + str(k)+"\n")
-    #     iter_time = time.time()
-    #     np.random.seed(k + SEED)
-    #
-    #     # Set to true to see every iteation of a single MCTS test
-    #     prints = False  # print each iteration
-    #
-    #     # Generating Environment for test
-    #     RootState = game.State(clusters)
-    #     Root = nd.Node(RootState)
-    #     start_time = time.time()
-    #     environment = game.ControllerPlacement_env(Root, graph, prints)
-    #
-    #     # Running MCTS Test with generated environment
-    #     x = MCTS.MCTS(environment, False, prints)
-    #     x.Run()
-    #
-    #     # Tracking results of MCTS test run
-    #     score_controllers.append(
-    #         [x.maxScore, x.maxControllers, "--- %s Runtime seconds ---" % (time.time() - iter_time)])
-    #     if PRINT:
-    #         print([x.maxScore, x.maxControllers, "--- %s Runtime seconds ---" % (time.time() - iter_time)])
-    #
-    #     # Tracking best score
-    #     if x.maxScore > max_score:
-    #         max_score = x.maxScore
-    #         max_controllers = x.maxControllers
-    #
-    #     if x.maxScore < min_score:
-    #         min_score = x.maxScore
-    #         min_controllers = x.maxControllers
-    #     if PRINT:
-    #         print("--- %s Runtime seconds ---" % (time.time() - iter_time))
+    mcts_start_time = time.time()
+    for k in range(NUMBER_ITERATIONS):
+        if PRINT:
+            print("iteration: " + str(k)+"\n")
+        iter_time = time.time()
 
-    # sum = 0
-    # for iter in range(NUMBER_ITERATIONS):
-    #     # print(score_controllers[i])
-    #     sum = sum + score_controllers[iter][0]
+        # Set to true to see every iteation of a single MCTS test
+        prints = False  # print each iteration
 
+        # Generating Environment for test
+        RootState = game.State(clusters)
+        Root = nd.Node(RootState)
+        environment = game.ControllerPlacement_env(Root, graph, prints)
+
+        # Running MCTS Test with generated environment
+        x = MCTS.MCTS(environment, False, prints)
+        x.Run()
+
+        # Tracking results of MCTS test run
+        score_controllers.append(
+            [x.maxScore, x.maxControllers, "--- %s Runtime seconds ---" % (time.time() - iter_time)])
+        if PRINT:
+            print([x.maxScore, x.maxControllers, "--- %s Runtime seconds ---" % (time.time() - iter_time)])
+
+        # Tracking best score
+        if x.maxScore > max_score:
+            max_score = x.maxScore
+            max_controllers = x.maxControllers
+
+        if x.maxScore < min_score:
+            min_score = x.maxScore
+            min_controllers = x.maxControllers
+        if PRINT:
+            print("--- %s Runtime seconds ---" % (time.time() - iter_time))
+
+    print("--- %s MCTS Runtime seconds ---" % (time.time() - mcts_start_time))
+    sum = 0
+    for iter in range(NUMBER_ITERATIONS):
+        # print(score_controllers[i])
+        sum = sum + score_controllers[iter][0]
+
+    heuristic_time = time.time()
     heuristic_env = ControllerEnv(graph, clusters)
-    # heuristic_controllers, heuristic = heuristic_env.graphCentroidAction()
+
+    heuristic_controllers, heuristic = heuristic_env.graphCentroidAction()
+    print("--- %s Heuristic Runtime seconds ---" % (time.time() - heuristic_time))
+
+
+    start = time.time()
     greedy_heuristic_controllers, greedy_heuristic = heuristic_env.compute_greedy_heuristic()
+    print("--- %s Greedy Heuristic Runtime seconds ---" % (time.time() - start))
+
+
+
 
     # Print total results
     if PRINT:
-        # print("Average: " + str(-1*sum / NUMBER_ITERATIONS))
-        # print("Best Score: " + str(-1*max_score) + "---" + str(max_controllers))
-        # print("Worst Score: " + str(-1*min_score) + "---" + str(min_controllers))
-        # print("Heuristic: "+str(heuristic_controllers)+"  "+ str(heuristic))
+        print("Average: " + str(-1*sum / NUMBER_ITERATIONS))
+        print("Best Score: " + str(-1*max_score) + "---" + str(max_controllers))
+        print("Worst Score: " + str(-1*min_score) + "---" + str(min_controllers))
+        print("Heuristic: "+str(heuristic_controllers)+"  "+ str(heuristic))
         print("Greedy_Heuristic: " + str(greedy_heuristic_controllers) + "  " + str(greedy_heuristic))
+
+
+        # opt_time = time.time()
+        # print("optimal" + str(x.calculateOptimal()))
+        # print("--- %s Optimal  Runtime seconds ---" % (time.time() - opt_time))
+        heuristic_env.render()
 
     print("Finished test")
 
 
 
-    # y_list = []
-    #
-    # # print(self.calculateOptimal())
-    # with open('Results.txt') as f:
-    #     for line in f:
-    #         num = line.split()[0]
-    #         y_list.append(float(num))
-    #
-    # plt.plot([i for i in range(len(y_list))], y_list)
-    # plt.title('Max Score Vs Iteration Step')
-    # plt.xlabel('Iteration Step')
-    # plt.ylabel('Max Score')
-    # plt.show()

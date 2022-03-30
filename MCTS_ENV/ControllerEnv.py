@@ -117,8 +117,8 @@ class ControllerEnv(gym.Env):
         nx.draw_networkx_edges(render_graph, self.pos, render_graph.edges())  # draw the edges of the render_graph
         nx.draw_networkx_labels(render_graph, self.pos)  # draw  the labels of the render_graph
         edge_labels = nx.get_edge_attributes(render_graph, 'weight')
-        nx.draw_networkx_edge_labels(render_graph, self.pos,
-                                     edge_labels=edge_labels)  # draw the edge weights of the render_graph
+        # nx.draw_networkx_edge_labels(render_graph, self.pos, edge_labels=edge_labels, font_size = 6)  # draw the edge weights of the render_graph
+
         plt.draw()
         if mode is 'human':
             plt.show()

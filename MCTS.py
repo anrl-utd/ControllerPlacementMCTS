@@ -41,9 +41,15 @@ class MCTS:
 
         # tracks best controller set and best score
         self.maxControllers = []
-        self.maxScore = -100000
+        self.maxScore = -1000000
         self.environment = env
         self.prints = prints
+        self.turns_no_improvement = 0
+        self.MAX_TURNS = 300
+        self.prev_score = self.maxScore
+        self.convergence = False
+        self.pre_max_score = self.maxScore
+        self.max_score_turns_no_improve = 0
 
     # -----------------------------------------------------------------------#
     # Description: Performs selection phase of the MCTS.
@@ -87,7 +93,7 @@ class MCTS:
                     print("Considered child", self.environment.GetStateRepresentation(Child.state), "UTC: inf", )
                 return Child
 
-        MaxWeight = -1000000000000
+        MaxWeight = -10000000000
         for Child in Node.children:
             # Weight = self.EvalUTC(Child)
             Weight = Child.sputc
@@ -192,6 +198,8 @@ class MCTS:
         Result = self.environment.GetResult(CurrentState)
         # print("Sim time:" + str(time.time() - copytime))
 
+
+
         if Result > self.maxScore:
             self.maxScore = Result
             self.maxControllers = CurrentState.current_controllers
@@ -225,6 +233,7 @@ class MCTS:
             CurrentNode.visits += 1
 
             NodesToUpdate = CurrentNode.children
+
             for node in NodesToUpdate:
                 if node.visits > 0:
                     self.EvalUTC(node)
@@ -343,6 +352,25 @@ class MCTS:
                 if len(node.children) > 0:
                     self.checkUTCForEach(node)
 
+    def calc_convergence(self, result):
+        if self.pre_max_score == self.maxScore:
+            self.max_score_turns_no_improve +=1
+
+            if self.max_score_turns_no_improve > 10000:
+                self.convergence = True
+        else:
+            self.max_score_turns_no_improve = 0
+        self.pre_max_score = self.maxScore
+
+        if self.prev_score >= result:
+            if self.turns_no_improvement >= self.MAX_TURNS:
+                self.convergence = True
+            self.turns_no_improvement += 1
+        else:
+
+            self.turns_no_improvement = 0
+        self.prev_score = result
+
 
 
 
@@ -391,7 +419,7 @@ class MCTS:
     # MaxIter	- Maximum iterations to run the search algorithm.
     # -----------------------------------------------------------------------#
     def Run(self, MaxIter=20000,prints=False):
-        self.prints = prints
+
         start_time0 = time.time()
         # nS = game.State(self.root.state.clusters)
 
@@ -407,12 +435,14 @@ class MCTS:
         t_list = []
         minmax = -10000
         self.verbose = False
-        for i in range(MaxIter):
+
+        i = 0
+        while not self.convergence and i < MaxIter:
             start_time = time.time()
 
             # if i != 0:
             #     self.checkUTCForEach(self.environment.root)
-            if prints:
+            if self.prints:
                 print("\n===== Begin iteration:", i, "=====")
             X = self.Selection()
 
@@ -426,10 +456,12 @@ class MCTS:
                     print("Result: ", Result)
 
                 self.Backpropagation(Y, Result)
-
+                self.calc_convergence(Result)
                 y_list.append(Result)
             else:
+
                 Result = self.environment.GetResult(X.state)
+
                 y_list.append(Result)
 
                 if self.verbose:
@@ -437,7 +469,7 @@ class MCTS:
                     print(Result)
 
                 self.Backpropagation(X, Result)
-
+                self.calc_convergence(Result)
                 if Result > self.maxScore:
                     self.maxScore = Result
                     self.maxControllers = X.state.current_controllers
@@ -445,8 +477,9 @@ class MCTS:
             t_list.append(time.time() - start_time)
             # print("--- %s seconds ---" % (time.time() - start_time))
             # self.PrintResult(Result)
-
-        if prints:
+            i += 1
+        print("i",str(i))
+        if self.prints:
             print("----Finished----")
             print("--- %s Total seconds ---" % (time.time() - start_time0))
             print("score:" + str(self.maxScore))
@@ -456,13 +489,13 @@ class MCTS:
             print("Search complete.")
             print("Iterations:", i)
 
-            plt.plot([i for i in range(MaxIter)], y_list)
+            plt.plot([j for j in range(i)], y_list)
             plt.title(' Score Vs Iteration Step')
             plt.xlabel('Iteration Step')
             plt.ylabel('Max Score')
             plt.show()
 
-            plt.plot([i for i in range(MaxIter)], t_list)
+            plt.plot([j for j in range(i)], t_list)
             plt.title('Time Vs Iteration Step')
             plt.xlabel('Iteration Step')
             plt.ylabel('Max Score')
