@@ -16,10 +16,12 @@ from MCTS_ENV.ControllerEnv import generateGraph, generateAlternateGraph, genera
 
 if __name__ == "__main__":
 
-    CREATEGRAPHS = True; # else it will read in graphs
-    GRAPHS_LOCATION = "Graphs/graph_files/graph_{}"
-    RESULTS_LOCATION = "Graphs/graph_results/graph_results_{}.csv"
-    NUMBER_OF_GRAPHS = 20
+
+    CREATEGRAPHS = True ; # else it will read in graphs
+    GRAPH_DIR_LOCATION = "Graphs/time_graph_files/3_08_2022_C=5"
+    GRAPHS_LOCATION = GRAPH_DIR_LOCATION + "/graph_{}"
+    RESULTS_LOCATION = "Graphs/time_graph_results/3_08_2022_C=5_results.{}.csv"
+    NUMBER_OF_GRAPHS = 40
 
     start_time = time.time()
     finishtime1 = 0
@@ -35,24 +37,28 @@ if __name__ == "__main__":
     file = open(RESULTS_LOCATION.format(num), 'w', newline='')
     writer = csv.writer(file)
 
-    for i in range(1, NUMBER_OF_GRAPHS + 1):
+    for i in range(0, NUMBER_OF_GRAPHS+0):
 
-        NUMBEROFNODES = i * 100
+        NUMBEROFNODES = 100 + 25*(i+1)
         NUMBEROFCLUSTERS = 5
 
+        j = i
 
         if CREATEGRAPHS:
             graph, clusters, pos = generateAlternateGraph(NUMBEROFCLUSTERS,NUMBEROFNODES)
-            if not os.path.isdir(GRAPHS_LOCATION.format(i)):
-                os.mkdir(GRAPHS_LOCATION.format(i))
+            if not os.path.isdir(GRAPH_DIR_LOCATION):
+                os.mkdir(GRAPH_DIR_LOCATION)
 
-            nx.write_gpickle(graph, GRAPHS_LOCATION.format(i)+'/graph.gpickle')
-            pickle.dump(clusters, open(GRAPHS_LOCATION.format(i)+'/clusters.pickle', 'wb'))
-            pickle.dump(pos, open(GRAPHS_LOCATION.format(i)+'/position.pickle', 'wb'))
+            if not os.path.isdir(GRAPHS_LOCATION.format(j)):
+                os.mkdir(GRAPHS_LOCATION.format(j))
+
+            nx.write_gpickle(graph, GRAPHS_LOCATION.format(j)+'/graph.gpickle')
+            pickle.dump(clusters, open(GRAPHS_LOCATION.format(j)+'/clusters.pickle', 'wb'))
+            pickle.dump(pos, open(GRAPHS_LOCATION.format(j)+'/position.pickle', 'wb'))
         else:
-            graph = nx.read_gpickle(GRAPHS_LOCATION.format(i)+"/graph.gpickle")
-            clusters = pickle.load(open(GRAPHS_LOCATION.format(i)+"/clusters.pickle", 'rb'))
-            pos = pickle.load((GRAPHS_LOCATION.format(i)+"/position.pickle", 'rb'))
+            graph = nx.read_gpickle(GRAPHS_LOCATION.format(j)+"/graph.gpickle")
+            clusters = pickle.load(open(GRAPHS_LOCATION.format(j)+"/clusters.pickle", 'rb'))
+            pos = pickle.load(open(GRAPHS_LOCATION.format(j)+"/position.pickle", 'rb'))
 
 
         print("\n\n\nGRAPH: {}".format(i) + "\n")
@@ -91,19 +97,18 @@ if __name__ == "__main__":
 
         score_controllers = []
 
+        MCTS_time = time.time()
         for k in range(NUMBER_ITERATIONS):
             if PRINT:
                 print("iteration: " + str(k)+"\n")
-            iter_time = time.time()
-            np.random.seed(k + 65)
 
+            iter_time = time.time()
             # Set to true to see every iteation of a single MCTS test
             prints = False  # print each iteration
 
             # Generating Environment for test
             RootState = game.State(clusters)
             Root = nd.Node(RootState)
-            start_time = time.time()
             environment = game.ControllerPlacement_env(Root, graph, prints)
 
             # Running MCTS Test with generated environment
@@ -111,10 +116,11 @@ if __name__ == "__main__":
             x.Run()
 
             # Tracking results of MCTS test run
+            MCTS_iter_time = time.time() - iter_time
             score_controllers.append(
-                [x.maxScore, x.maxControllers, "--- %s Runtime seconds ---" % (time.time() - iter_time)])
+                [x.maxScore, x.maxControllers, "--- %s Runtime seconds ---" % (MCTS_iter_time)])
             if PRINT:
-                print([x.maxScore, x.maxControllers, "--- %s Runtime seconds ---" % (time.time() - iter_time)])
+                print([x.maxScore, x.maxControllers, "--- %s Runtime seconds ---" % (MCTS_iter_time)])
 
             # Tracking best score
             if x.maxScore > max_score:
@@ -124,7 +130,7 @@ if __name__ == "__main__":
             if x.maxScore < min_score:
                 min_score = x.maxScore
                 min_controllers = x.maxControllers
-            if PRINT:
+            if True:
                 print("--- %s Runtime seconds ---" % (time.time() - iter_time))
 
         sum = 0
@@ -132,9 +138,18 @@ if __name__ == "__main__":
             # print(score_controllers[i])
             sum = sum + score_controllers[iter][0]
 
+        MCTS_time =  time.time() - MCTS_time
+
+        heuristic_time = time.time()
         heuristic_env = ControllerEnv(graph, clusters)
         heuristic_controllers, heuristic = heuristic_env.graphCentroidAction()
+        heuristic_time = time.time() - heuristic_time
+        print("--- %s Heuristic Runtime seconds ---" % (heuristic_time))
+
+        greedy_heuristic_time = time.time()
         greedy_heuristic_controllers, greedy_heuristic = heuristic_env.compute_greedy_heuristic()
+        greedy_heuristic_time = time.time() - greedy_heuristic_time
+        print("--- %s Greedy Heuristic Runtime seconds ---" % (greedy_heuristic_time))
 
         # Print total results
         if PRINT:
@@ -144,25 +159,10 @@ if __name__ == "__main__":
             print("Heuristic: "+str(heuristic_controllers)+"  "+ str(heuristic))
             print("Greedy_Heuristic: " + str(greedy_heuristic_controllers) + "  " + str(greedy_heuristic))
 
-        # file.write("Average: " + str(sum / NUMBER_ITERATIONS)+"\n")
-        # file.write("Best Score: " + str(max_score) + "---" + str(max_controllers)+"\n")
-        # file.write("Worst Score: " + str(min_score) + "---" + str(min_controllers)+"\n")
-        writer.writerow([i,str(-1*sum / NUMBER_ITERATIONS), str(-1*max_score) , str(-1*min_score), str(max_controllers), str(min_controllers),str(heuristic), str(heuristic_controllers),str(greedy_heuristic), str(greedy_heuristic_controllers)])
+
+        writer.writerow([i,str(-1*sum / NUMBER_ITERATIONS), str(-1*max_score) , str(-1*min_score), str(max_controllers), str(min_controllers),str(heuristic), str(heuristic_controllers),str(greedy_heuristic), str(greedy_heuristic_controllers),str(MCTS_time),str(heuristic_time),str(greedy_heuristic_time)])
 
         print("Finished test: {}".format(i))
     file.close()
     print("FINISHED")
 
-    # y_list = []
-    #
-    # # print(self.calculateOptimal())
-    # with open('Results.txt') as f:
-    #     for line in f:
-    #         num = line.split()[0]
-    #         y_list.append(float(num))
-    #
-    # plt.plot([i for i in range(len(y_list))], y_list)
-    # plt.title('Max Score Vs Iteration Step')
-    # plt.xlabel('Iteration Step')
-    # plt.ylabel('Max Score')
-    # plt.show()
